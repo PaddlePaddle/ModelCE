@@ -12,6 +12,7 @@ mkdir -p @(config.test_root)
 class TestMain(unittest.TestCase):
     def setUp(self):
         config.switch_to_test_mode()
+        os.environ['modelci_root'] = config.workspace
 
     def test_log(self):
         utils.log.logger().info("hello")
