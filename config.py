@@ -77,9 +77,8 @@ def switch_to_test_mode():
         level=_log_level_,
         filename=pjoin(workspace, 'test.log'))
 
-
-if not os.path.isdir(test_root):
-    os.mkdir(test_root)
+    if not os.path.isdir(test_root):
+        os.mkdir(test_root)
 
 # os.mkdir(global_state_root())
 # os.mkdir(test_root)

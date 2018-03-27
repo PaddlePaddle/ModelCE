@@ -105,6 +105,8 @@ def source_code_updated():
         gstate.set(config._state_paddle_code_commit_, cur_commit)
     return updated
 
+
+baseline.strategy.refresh_workspace()
 test_models()
 baseline.strategy()
 
