@@ -111,7 +111,8 @@ test_models()
 baseline.strategy()
 
 if not evaluation_succeed():
-    print("evaluation failed!")
-    print("evaluation details:")
-    print(gstate.get_evaluation_result())
+    log.error("evaluation failed!")
+    log.warn("evaluation details:")
+    log.warn(gstate.get_evaluation_result())
     sys.exit(-1)
+log.warn("all evaluation passed!")
