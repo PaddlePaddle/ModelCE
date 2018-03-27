@@ -32,13 +32,13 @@ def test_models():
         log.info('get model', model)
         status = 'fail'
         model_path = pjoin(config.workspace, model)
-        try:
-            passed, errors = test_model(model)
-            status = "pass" if passed else '; '.join(errors)
-            log.info('evaluation status', status)
-        except Exception as e:
-            log.error('model %s execute error' % model)
-            status = 'exec error: %s' % str(e)
+        # try:
+        passed, errors = test_model(model)
+        status = "pass" if passed else '; '.join(errors)
+        log.info('evaluation status', status)
+        # except Exception as e:
+        #     log.error('model %s execute error' % model)
+        #     status = 'exec error: %s' % str(e)
         evaluate_status.append((model, status))
         update_evaluation_status(evaluate_status)
 
@@ -76,9 +76,6 @@ def test_model(model_name):
                 status.append(factor.error_info)
             else:
                 status.append(factor.success_info)
-            passed = passed and suc
-            # update evaluation status
-            update_model_factors_status(model_name, factor.name, 'pass' if suc else factor.error_info)
         return passed, status
 
     with PathRecover():
