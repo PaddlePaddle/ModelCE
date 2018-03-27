@@ -13,7 +13,7 @@ repo_url = lambda: 'https://github.com/PaddlePaddle/Paddle.git'
 
 # the place to clone paddle source code
 # local_repo_path = lambda: pjoin(workspace, 'paddle_code')
-local_repo_path = lambda: '/opt/teamcity/buildAgent/work/e7b25739c6e7ce4f/'
+local_repo_path = lambda: pjoin(workspace, '..')
 
 # the compiled paddle whl to test
 compiled_whl_path = lambda: '/usr/local/opt/paddle/share/wheels/paddlepaddle_gpu-0.11.1a1-cp27-cp27mu-linux_x86_64.whl'
