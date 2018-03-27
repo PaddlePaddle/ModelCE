@@ -43,14 +43,6 @@ def test_models():
         update_evaluation_status(evaluate_status)
 
     log.warn('evaluation result:\n%s' % gstate.get_evaluation_result())
-    # commitid = repo.get_paddle_commit()
-    date = time.strftime("%m-%d %H:%M:%S")
-    # if evaluation_succeed():
-    #     update_success_commit_to_gstate()
-    #     gstate.add_evaluation_record(commitid, True, date)
-    # else:
-    #     update_fail_commit_to_gstate()
-        # gstate.add_evaluation_record(commitid, False, date)
 
 def test_model(model_name):
     model_dir = pjoin(config.models_path(), model_name)
@@ -88,24 +80,15 @@ def update_evaluation_status(status):
     lines = ['%s\t%s' % kv for kv in status]
     gstate.set_evaluation_result('\n'.join(lines))
 
-def source_code_updated():
-    '''
-    whether paddle source is updated
-    '''
-    cur_commit = repo.get_paddle_commit()
-    last_commit = gstate.get(config._state_paddle_code_commit_)
-    updated = last_commit is None or cur_commit != last_commit
-    gstate.set_source_code_updated(updated)
-    if not updated:
-        log.info("paddle source code is not changed, skip test, commitid %s" % cur_commit)
-    else:
-        gstate.set(config._state_paddle_code_commit_, cur_commit)
-    return updated
-
-
-baseline.strategy.refresh_workspace()
-test_models()
-baseline.strategy()
+# this works with teamcity, with an env variable called 'mode'
+if $mode != "baseline_test":
+    log.warn('normal test')
+    baseline.strategy.refresh_workspace()
+    test_models()
+    baseline.strategy()
+else:
+    log.warn('baseline test')
+    test_models()
 
 if not evaluation_succeed():
     log.error("evaluation failed!")
