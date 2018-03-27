@@ -12,7 +12,8 @@ pjoin = os.path.join
 repo_url = lambda: 'https://github.com/PaddlePaddle/Paddle.git'
 
 # the place to clone paddle source code
-local_repo_path = lambda: pjoin(workspace, 'paddle_code')
+# local_repo_path = lambda: pjoin(workspace, 'paddle_code')
+local_repo_path = lambda: pjoin(workspace, '..')
 
 # the compiled paddle whl to test
 compiled_whl_path = lambda: '/usr/local/opt/paddle/share/wheels/paddlepaddle_gpu-0.11.1a1-cp27-cp27mu-linux_x86_64.whl'
@@ -50,8 +51,8 @@ _success_commit_ = 'success_commit'
 # set logging
 _log_format_ = '[%(asctime)s %(levelname)s] %(message)s'
 _log_level_ = logging.DEBUG
-logging.basicConfig(
-    format=_log_format_, level=_log_level_, filename=log_path())
+# logging.basicConfig(
+#     format=_log_format_, level=_log_level_, filename=log_path())
 
 
 def switch_to_test_mode():
@@ -75,7 +76,6 @@ def switch_to_test_mode():
         format=_log_format_,
         level=_log_level_,
         filename=pjoin(workspace, 'test.log'))
-
 
 if not os.path.isdir(test_root):
     os.mkdir(test_root)
