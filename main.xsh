@@ -32,13 +32,13 @@ def test_models():
         log.info('get model', model)
         status = 'fail'
         model_path = pjoin(config.workspace, model)
-        # try:
-        passed, errors = test_model(model)
-        status = "pass" if passed else '; '.join(errors)
-        log.info('evaluation status', status)
-        # except Exception as e:
-        #     log.error('model %s execute error' % model)
-        #     status = 'exec error: %s' % str(e)
+        try:
+            passed, errors = test_model(model)
+            status = "pass" if passed else '; '.join(errors)
+            log.info('evaluation status', status)
+        except Exception as e:
+            log.error('model %s execute error' % model)
+            status = 'exec error: %s' % str(e)
         evaluate_status.append((model, status))
         update_evaluation_status(evaluate_status)
 
