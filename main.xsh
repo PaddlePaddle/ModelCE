@@ -112,4 +112,6 @@ baseline.strategy()
 
 if not evaluation_succeed():
     print("evaluation failed!")
+    print("evaluation details:")
+    print(gstate.get_evaluation_result())
     sys.exit(-1)
