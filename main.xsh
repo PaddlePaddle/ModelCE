@@ -43,14 +43,14 @@ def test_models():
         update_evaluation_status(evaluate_status)
 
     log.warn('evaluation result:\n%s' % gstate.get_evaluation_result())
-    commitid = repo.get_paddle_commit()
+    # commitid = repo.get_paddle_commit()
     date = time.strftime("%m-%d %H:%M:%S")
-    if evaluation_succeed():
-        update_success_commit_to_gstate()
-        gstate.add_evaluation_record(commitid, True, date)
-    else:
-        update_fail_commit_to_gstate()
-        gstate.add_evaluation_record(commitid, False, date)
+    # if evaluation_succeed():
+    #     update_success_commit_to_gstate()
+    #     gstate.add_evaluation_record(commitid, True, date)
+    # else:
+    #     update_fail_commit_to_gstate()
+        # gstate.add_evaluation_record(commitid, False, date)
 
 def test_model(model_name):
     model_dir = pjoin(config.models_path(), model_name)
