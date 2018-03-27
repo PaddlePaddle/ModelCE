@@ -35,6 +35,9 @@ class Factor(object):
         ''' Error information, will write to a log file. '''
         raise NotImplementedError
 
+    def success_info(self):
+        raise NotImplementedError
+
     # def error_info_in_html(self):
     #     ''' Error infomation, will place in a HTML page or email.'''
     #     raise NotImplementedError
@@ -99,6 +102,7 @@ class GreaterWorseFactor(Factor):
             ratio=str(self.ratios).replace('\n', ' '),
             thre=self.diff_thre)
 
+    @property
     def sucess_info(self):
         return "[{name}] pass".format(self.name)
 

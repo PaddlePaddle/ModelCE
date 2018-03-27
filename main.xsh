@@ -23,26 +23,6 @@ def test_released_whl():
     prepare.install_whl()
     test_models()
 
-def test_latest_source():
-    baseline.strategy.refresh_workspace()
-    write_init_models_factors_to_gstate()
-    write_init_progress_to_gstate()
-    write_history_to_gstate()
-    # update_model_factors_status('prepare', 'update_baseline', 'pass')
-
-    log.warn('init local paddle repo %s' % config.local_repo_path())
-    if not os.path.isdir(config.local_repo_path()):
-        repo.clone(config.repo_url(), config.local_repo_path())
-    repo.pull(config.local_repo_path())
-    update_model_factors_status('prepare', 'update_source_code', 'pass')
-
-    if source_code_updated():
-        prepare.compile()
-        prepare.install_whl()
-        test_models()
-        # update baseline
-        baseline.strategy()
-
 def test_models():
     cd @(config.workspace)
     evaluate_status = []
@@ -92,7 +72,10 @@ def test_model(model_name):
         status = []
         for factor in tracking_factors:
             suc = factor.evaluate(model_root)
-            if not suc: status.append(factor.error_info)
+            if not suc:
+                status.append(factor.error_info)
+            else:
+                status.append(factor.success_info)
             passed = passed and suc
             # update evaluation status
             update_model_factors_status(model_name, factor.name, 'pass' if suc else factor.error_info)
@@ -122,6 +105,9 @@ def source_code_updated():
         gstate.set(config._state_paddle_code_commit_, cur_commit)
     return updated
 
-for i in range(5000):
-    test_latest_source()
-    time.sleep(60)
+test_models()
+baseline.strategy()
+
+if not evaluation_succeed():
+    print("evaluation failed!")
+    sys.exit(-1)
