@@ -107,8 +107,33 @@ class GreaterWorseFactor(Factor):
         return "[{name}] pass".format(self.name)
 
 
+class LessWorseFactor(GreaterWorseFactor):
+    ''' Evaluator for any factors that less value is bad, trainning acc for example. '''
+
+    def __init__(self, name, diff_thre, skip_head=2):
+        '''
+        diff_thre: difference threshold.
+        '''
+        super(LessWorseFactor, self).__init__(name, diff_thre, skip_head)
+        self.skip_head = skip_head
+        self.name = name
+        self.diff_thre = diff_thre
+
+    def evaluate(self, root):
+        cur_data = load_records_from(
+            pjoin(root, self.out_file))[self.skip_head:]
+        his_data = load_records_from(
+            pjoin(root, self.his_file))[self.skip_head:]
+        diff = his_data - cur_data
+        logging.info('evaluation diff ratio: %s' % str(diff))
+        larger = diff > 0
+        self.ratios = diff[larger] / his_data[larger]
+        logging.info('evaluation diff ratio: %s' % str(self.ratios))
+        return not (self.ratios > self.diff_thre).any()
+
 CostFactor = GreaterWorseFactor
 DurationFactor = GreaterWorseFactor
+AccFactor = LessWorseFactor
 
 
 def load_records_from(file):
