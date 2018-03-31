@@ -52,7 +52,7 @@ TEST(ImageClassification, PrecisionKPI) {
 
   if (token != nullptr && sheet != nullptr && row != nullptr) {
      double precision = ComputePrecision();
-     google_sheets.v4.WriteCell(token, sheet, row, "Precision", precision);
+     google_sheets.v4.WriteCell(token, sheet, row, "KPI 1 (Precision)", precision);
   }
 }
 ```
@@ -83,7 +83,7 @@ It's probable that we want to run KPI programs in some selected commits, e.g., m
    
    The updated schema is as follows
    
-   | Git commit SHA | Date & Time | KPI 1 | KPI2 | Build Status | Build Log |
+   | Git commit SHA | Date & Time | KPI 1 (Precision) | KPI 2 (Recall) | Build Status | Build Log |
    |----------------|-------------|-------|------|--------------|-----------|
    
 1. Write a Bash program, that calls Google Sheet command line tool, to check for rows where **build status** is "TODO", and checkout the corresponding commit and build and run.  
