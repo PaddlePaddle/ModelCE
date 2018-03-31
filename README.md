@@ -63,7 +63,7 @@ Given that CI systems is in responsible to run unit tests before we merge Pulls,
 
 This also ensures that the above sensitive information resides on CI system other than in our source code, which is publicly available.
 
-## Evaluate All Merge Commits
+## Evaluate Selected Commits
 
 It's probable that we want to run KPI programs in some selected commits, e.g., merge commits in the `develop` branch.  We can 
 
