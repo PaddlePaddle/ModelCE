@@ -7,7 +7,7 @@ Developers of an AI system want to see their efforts are improving the effective
 1. An AI system has several KPIs.  The image classification system has two KPIs -- precision and recall.
 1. KPIs are supposed to be improved (increment or decrement) with respect to Git commits.
 
-## The Solution
+## The Solution as a Table
 
 We proposal to develop a tool, the *Continuous Evaluation* program, which checks out each Git commits (or, for saving computational resource, only Git merge commits on the main branch), builds and runs the *KPI evaluation programs* in the commit.  
 
@@ -24,49 +24,70 @@ Given that each Git commit is immutable and has a timestamp, and each Git commit
 
 Here we noticed that the over trends of the precision grows w.r.t. date/time, but the number 29.01% on 2018-01-03 is a decrease, thus warns us about something wrong with the merge commit 39bcc9e1 and reminds us to check the corresponding pull request.
 
-## Components in the Solution
+## Fills in the Table
 
-The AI system to be monitored must include:
+KPI programs in the repository to be evaluated continuously takes the responsibility to compute the KPI values. It doesn't add much letting KPI programs to write the values to a storage, e.g., [Google Sheets](https://developers.google.com/sheets/guides/concepts). Comparing to alternatives that require a third-party program to collect KPIs and write them into the storage, the approach that relying on KPI programs themselves to write is simpler. 
 
-1. One or more KPI evaluation programs that prints the KPI value.
-1. A bash script, say `./kpi.bash` that builds and runs the KPI evaluation programs.
+In order to fill in a Google Sheets, KPI programs need 
 
-The Continuous Evaluation system should have the following features:
+1. the access token of Google Sheets API,
+1. the Git repository URL, as the table (sheet) name, and
+1. the (current) Git commit, as the row ID.
 
-1. A program or a function `build_and_eval(string git_repo, string git_commit_sha, Storage store)`, which
-   - checks out the source code of the specified Git commit
-   - builds the commit
-   - runs the KPI programs
-   - save KPI values into the table in `store`.
+The KPI programs do not have these information, but they could get them from environment variables:
 
-1. A program `build_and_eval_all(string git_repo, Storage store)`, which
-   - loop over each merge commit in some branches (`develop` and `master`)
-   - for each commit, if the row in the above table is empty, call `build_and_eval(repo, commit, store)`.
-   
-1. The storage service that can maintain the above table, and preferablly analyze and plot the data.  A good choice is Google Doc.
+1. CONTINUOUS_EVALUATION_GOOGLE_SHEETS_TOEKN
+1. CONTINUOUS_EVALUATION_SHEET_NAME
+1. CONTINUOUS_EVALUATION_ROW_ID
 
-## Detailed Design
+## KPI Programs and Unit Tests
 
-Consider writing `build_and_eval` as a Bash function. A simple reference implementation is as follows:
+Please be aware that the KPI programs could be unit tests.  If so, we can use CI systems to trigger the running of KPI programs.  We might not want to run KPI programs for all pull requests commits, because it might take too long time to run each KPI.  This could be achieve by letting the unit test programs checks the existence of the above environment variables.
 
-```bash
-function build_and_eval(repo_url, commit, local_repo_dir, google_doc_api_key) {
-  if [[ -d $local_repo_dir ]]; then
-    git clone $repo_url -o $local_repo_dir
-  fi
-  
-  cd $local_repo_dir
-  
-  git checkout -b current $commit
-  
-  ./kpi.bash | \                                         # Build and run KPI evluation programs.
-    awk '$1 == "KPI" { printf("%s %s", $2, $3); }' | \   # Extract printed KPI names and values.
-    google-doc-cli google_doc_api_key repo_url commit    # Write to table repo_url and row commit.
-    
-  git checkout master
-  git branch -d current
+```c++
+TEST(ImageClassification, PrecisionKPI) {
+  char* token = std::getenv("CONTINUOUS_EVALUATION_GOOGLE_SHEETS_TOEKN");
+  char* sheet = std::getenv("CONTINUOUS_EVALUATION_SHEET_NAME");
+  char* row = std::getenv("CONTINUOUS_EVALUATION_ROW_ID");
+
+  if (token != nullptr && sheet != nullptr && row != nullptr) {
+     double precision = ComputePrecision();
+     google_sheets.v4.WriteCell(token, sheet, row, "Precision", precision);
+  }
 }
 ```
 
-Survey if there is a convenient way, e.g., a command line tool, that can write data into a Google Doc spreadsheet.
+## Evaluate A Certain Commit
+
+Given that CI systems is in responsible to run unit tests before we merge Pulls, in case that we have sufficient CI servers, we can configure CI systems (e.g., TeamCity) to pass in `CONTINUOUS_EVALUATION_GOOGLE_SHEETS_TOEKN`, `CONTINUOUS_EVALUATION_SHEET_NAME`, and `CONTINUOUS_EVALUATION_ROW_ID` to all unit tests and activate the KPI programs.
+
+This also ensures that the above sensitive information resides on CI system other than in our source code, which is publicly available.
+
+## Evaluate All Merge Commits
+
+It's probable that we want to run KPI programs in some selected commits, e.g., merge commits in the `develop` branch.  We can 
+
+1. Select these commits from Git, for example,
+ 
+   ```bash
+   git checkout develop
+   git log --merges
+   ```
    
+1. Dumps the output into a CSV file and import to Google Sheets.  The schema should include a **build status** flag, whose value could be 
+
+   - "TODO": the commit has not been built and the KPI programs were not running
+   - "DOING": some program is building and running the commit
+   - "FAILED": some program has built and run the commit, but it somehow failed. The log could be in an additional column **build log**,
+   - "SUCCESS": the commit was built and ran, and all KPIs were recorded.
+   
+   The updated schema is as follows
+   
+   | Git commit SHA | Date & Time | KPI 1 | KPI2 | Build Status | Build Log |
+   |----------------|-------------|-------|------|--------------|-----------|
+   
+1. Write a Bash program, that calls Google Sheet command line tool, to check for rows where **build status** is "TODO", and checkout the corresponding commit and build and run.  
+
+   - If given a command line flag `--retry-failed`, this program also try to build and run those with build status is "FAILED".
+   - **We can run as many instances of this program on all available computers to complete all selected commits as soon as possible**.
+   - **We can add/delete commits in the Google Sheet when the above program is running.**
