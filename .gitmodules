@@ -1,0 +1,3 @@
+[submodule "web/pypage"]
+	path = web/pypage
+	url = https://github.com/Superjomn/pypage.git
