@@ -8,7 +8,7 @@ from config import pjoin
 from utils import PathRecover, log
 import os
 import argparse
-from analysis_kpis import Analysis_kpi_data
+from analysis_kpis import AnalysisKpiData
 
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
@@ -31,7 +31,7 @@ def main():
     args = parse_args()
     kpis_list = run_task(args.task_dir, args.times)
     print(kpis_list)
-    ana = Analysis_kpi_data(kpis_list)
+    ana = AnalysisKpiData(kpis_list)
     ana.analysis_data()
     ana.print_result()
 

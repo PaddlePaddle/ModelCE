@@ -7,14 +7,13 @@ analysis the benchmark model kpi
 """
 import numpy as np
 
-class Analysis_kpi_data(object):
+class AnalysisKpiData(object):
     """
     Analysis_kpi_data
     """
     def __init__(self, kpis_list):
         self.kpis_list = kpis_list
         self.analysis_result = {}
-
 
     def analysis_data(self):
         """
