@@ -23,26 +23,6 @@ def test_released_whl():
     prepare.install_whl()
     test_models()
 
-def test_latest_source():
-    baseline.strategy.refresh_workspace()
-    write_init_models_factors_to_gstate()
-    write_init_progress_to_gstate()
-    write_history_to_gstate()
-    # update_model_factors_status('prepare', 'update_baseline', 'pass')
-
-    log.warn('init local paddle repo %s' % config.local_repo_path())
-    if not os.path.isdir(config.local_repo_path()):
-        repo.clone(config.repo_url(), config.local_repo_path())
-    repo.pull(config.local_repo_path())
-    update_model_factors_status('prepare', 'update_source_code', 'pass')
-
-    if source_code_updated():
-        prepare.compile()
-        prepare.install_whl()
-        test_models()
-        # update baseline
-        baseline.strategy()
-
 def test_models():
     cd @(config.workspace)
     evaluate_status = []
@@ -63,14 +43,6 @@ def test_models():
         update_evaluation_status(evaluate_status)
 
     log.warn('evaluation result:\n%s' % gstate.get_evaluation_result())
-    commitid = repo.get_paddle_commit()
-    date = time.strftime("%m-%d %H:%M:%S")
-    if evaluation_succeed():
-        update_success_commit_to_gstate()
-        gstate.add_evaluation_record(commitid, True, date)
-    else:
-        update_fail_commit_to_gstate()
-        gstate.add_evaluation_record(commitid, False, date)
 
 def test_model(model_name):
     model_dir = pjoin(config.models_path(), model_name)
@@ -92,10 +64,10 @@ def test_model(model_name):
         status = []
         for factor in tracking_factors:
             suc = factor.evaluate(model_root)
-            if not suc: status.append(factor.error_info)
-            passed = passed and suc
-            # update evaluation status
-            update_model_factors_status(model_name, factor.name, 'pass' if suc else factor.error_info)
+            if not suc:
+                status.append(factor.error_info)
+            else:
+                status.append(factor.success_info)
         return passed, status
 
     with PathRecover():
@@ -108,20 +80,19 @@ def update_evaluation_status(status):
     lines = ['%s\t%s' % kv for kv in status]
     gstate.set_evaluation_result('\n'.join(lines))
 
-def source_code_updated():
-    '''
-    whether paddle source is updated
-    '''
-    cur_commit = repo.get_paddle_commit()
-    last_commit = gstate.get(config._state_paddle_code_commit_)
-    updated = last_commit is None or cur_commit != last_commit
-    gstate.set_source_code_updated(updated)
-    if not updated:
-        log.info("paddle source code is not changed, skip test, commitid %s" % cur_commit)
-    else:
-        gstate.set(config._state_paddle_code_commit_, cur_commit)
-    return updated
+# this works with teamcity, with an env variable called 'mode'
+if $mode != "baseline_test":
+    log.warn('normal test')
+    baseline.strategy.refresh_workspace()
+    test_models()
+    baseline.strategy()
+else:
+    log.warn('baseline test')
+    test_models()
 
-for i in range(5000):
-    test_latest_source()
-    time.sleep(60)
+if not evaluation_succeed():
+    log.error("evaluation failed!")
+    log.warn("evaluation details:")
+    log.warn(gstate.get_evaluation_result())
+    sys.exit(-1)
+log.warn("all evaluation passed!")

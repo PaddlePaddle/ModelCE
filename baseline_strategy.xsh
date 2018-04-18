@@ -71,10 +71,11 @@ class GitStrategy(Strategy):
     def refresh_workspace(self):
         log.warn('baseline refresh workspace')
         with PathRecover():
-            self._init_repo()
-            cd @(self.local_dst)
-            # git checkout -b master origin/master
-            git checkout -b develop origin/master
+            if $mode != "baseline_test":
+                self._init_repo()
+                cd @(self.local_dst)
+                # git checkout -b master origin/master
+                git checkout -b develop origin/master
 
     def update_baseline(self):
         log.warn('baseline update baseline')
