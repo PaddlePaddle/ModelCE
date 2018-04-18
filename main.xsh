@@ -2,97 +2,157 @@
 $RAISE_SUBPROC_ERROR = True
 $XONSH_SHOW_TRACEBACK = True
 
-import os
 import sys; sys.path.insert(0, '')
-import time
-
-import prepare
 import config
+from config import pjoin
+from utils import PathRecover, log
+import persistence as pst
+import os
 import repo
-import baseline
-from utils import *
-from core import TestError
 
-# set environ for tests to load core.py
-# TODO no need two ways to set environment
-$modelci_root = config.workspace
-os.environ['modelci_root'] = config.workspace
+$ceroot=config.workspace
+os.environ['ceroot'] = config.workspace
+mode = os.environ.get('mode', 'evaluation')
 
-def test_released_whl():
-    prepare.get_whl()
-    prepare.install_whl()
-    test_models()
 
-def test_models():
+def main():
+    #try_start_mongod()
+    refresh_baseline_workspace()
+    suc = evaluate_tasks()
+    if suc:
+        display_success_info()
+        if mode != "baseline_test":
+            update_baseline()
+        exit 0
+    else:
+        display_fail_info()
+        sys.exit(-1)
+        exit -1
+
+
+def update_baseline():
+    ''' update the baseline in a git repo using current base. '''
+    log.warn('updating baseline')
+    commit = repo.get_commit(config.paddle_path)
+    with PathRecover():
+        message = "evalute [%s]" % commit
+        for task_name in get_tasks():
+            task_dir = pjoin(config.baseline_path, task_name)
+            cd @(task_dir)
+            print('task_dir', task_dir)
+            if os.path.isdir('latest_kpis'):
+                print('coping')
+                cp *_factor.txt latest_kpis/
+        git commit -a -m @(message)
+        git push
+
+
+def refresh_baseline_workspace():
+    ''' download baseline. '''
+    if mode != "baseline_test":
+        # production mode, clean baseline and rerun
+        rm -rf @(config.baseline_path)
+        git clone @(config.baseline_repo_url) @(config.baseline_path)
+
+
+def evaluate_tasks():
+    '''
+    Evaluate all the tasks. It will continue to run all the tasks even
+    if any task is failed to get a summary.
+    '''
     cd @(config.workspace)
-    evaluate_status = []
-    log.info('begin to evaluate model')
-    gstate.clear(config._evaluation_result_)
-    for model in models():
-        log.info('get model', model)
-        status = 'fail'
-        model_path = pjoin(config.workspace, model)
-        try:
-            passed, errors = test_model(model)
-            status = "pass" if passed else '; '.join(errors)
-            log.info('evaluation status', status)
-        except Exception as e:
-            log.error('model %s execute error' % model)
-            status = 'exec error: %s' % str(e)
-        evaluate_status.append((model, status))
-        update_evaluation_status(evaluate_status)
+    paddle_commit = repo.get_commit(config.paddle_path)
+    commit_time = repo.get_commit_date(config.paddle_path)
+    log.warn('commit', paddle_commit)
+    all_passed = True
+    tasks = [v for v in get_tasks()]
+    for task in get_tasks():
+        passed, eval_infos, kpis, kpi_types = evaluate(task)
 
-    log.warn('evaluation result:\n%s' % gstate.get_evaluation_result())
+        if mode != "baseline_test":
+            log.warn('add evaluation %s result to mongodb' % task)
+            pst.add_evaluation_record(paddle_commit,
+                                      commit_time,
+                                      task,
+                                      passed,
+                                      eval_infos, kpis, kpi_types)
+        if not passed:
+            all_passed = False
+    return all_passed
 
-def test_model(model_name):
-    model_dir = pjoin(config.models_path(), model_name)
-    log.info('model dir', model_dir)
-    def run_model():
-        log.warn('running model ', model_name)
-        ./train.xsh
-        log.warn('finish running model')
-    def evaluate_model():
-        log.warn('evaluating model ', model_name)
-        log.info('models_path', config.models_path())
-        model_root = pjoin(config.models_path(), model_name)
-        log.info('model_root', model_root)
-        cd @(config.workspace)
-        env = {}
-        exec('from models.%s.continuous_evaluation import tracking_factors' % model_name, env)
-        tracking_factors = env['tracking_factors']
-        passed = True
-        status = []
-        for factor in tracking_factors:
-            suc = factor.evaluate(model_root)
-            if not suc:
-                status.append(factor.error_info)
-            else:
-                status.append(factor.success_info)
-        return passed, status
+
+def evaluate(task_name):
+    '''
+    task_name: str
+        name of a task directory.
+    returns:
+        passed: bool
+            whether this task passes the evaluation.
+        eval_infos: list of str
+            human-readable evaluations result for all the kpis of this task.
+        kpis: dict of (kpi_name, list_of_float)
+
+    '''
+    task_dir = pjoin(config.baseline_path, task_name)
+    log.warn('evaluating model', task_name)
 
     with PathRecover():
-        cd @(model_dir)
-        run_model()
-        return evaluate_model()
+        cd @(task_dir)
+        ./run.xsh
 
-def update_evaluation_status(status):
-    ''' persist the evaluation status to path '''
-    lines = ['%s\t%s' % kv for kv in status]
-    gstate.set_evaluation_result('\n'.join(lines))
+        # load kpis
+        cd @(config.workspace)
+        env = {}
+        exec('from tasks.%s.continuous_evaluation import tracking_kpis'
+             % task_name, env)
+        tracking_kpis = env['tracking_kpis']
 
-# this works with teamcity, with an env variable called 'mode'
-if $mode != "baseline_test":
-    log.warn('normal test')
-    baseline.strategy.refresh_workspace()
-    test_models()
-    baseline.strategy()
-else:
-    log.warn('baseline test')
-    test_models()
+        # evaluate all the kpis
+        eval_infos = []
+        kpis = {}
+        kpi_types = {}
+        passed = True
+        for kpi in tracking_kpis:
+            suc = kpi.evaluate(task_dir)
+            if not suc:
+                passed = False
+            kpis[kpi.name] = kpi.cur_data
+            kpi_types[kpi.name] = kpi.__class__.__name__
+            # if failed, continue to evaluate all the kpis to get full statistics.
+            eval_infos.append(kpi.fail_info if not suc else kpi.success_info)
+        return passed, eval_infos, kpis, kpi_types
 
-if not evaluation_succeed():
-    log.error("evaluation failed!")
-    log.warn("evaluation details:")
-    log.warn(gstate.get_evaluation_result())
-    sys.exit(-1)
-log.warn("all evaluation passed!")
+
+def get_tasks():
+    with PathRecover():
+        cd @(config.workspace)
+        subdirs = $(ls @(config.baseline_path)).split()
+        return filter(lambda x : not (x.startswith('__') or x.endswith('.md')), subdirs)
+
+
+def display_fail_info():
+    paddle_commit = repo.get_commit(config.paddle_path)
+    infos = pst.db.finds(config.table_name, {'commitid': paddle_commit, 'type': 'kpi' })
+    log.error('Evaluate [%s] failed!' % paddle_commit)
+    log.warn('The details:')
+    for info in infos:
+        log.info('task:', info['task'])
+        log.info('passed: ', info['passed'])
+        log.info('infos', '\n'.join(info['infos']))
+        log.info('kpis keys', info['kpis-keys'])
+        log.info('kpis values', info['kpis-values'])
+
+
+def display_success_info():
+    paddle_commit = repo.get_commit(config.paddle_path)
+    log.warn('Evaluate [%s] successed!' % paddle_commit)
+
+def try_start_mongod():
+    out = $(ps ax | grep mongod).strip().split('\n')
+    print('out', out)
+    if len(out) < 1: # there are no mongod service
+        log.warn('starting mongodb')
+        mkdir -p /chunwei/ce_mongo.db
+        mongod --dbpath /chunwei/ce_mongo.db &
+
+main()

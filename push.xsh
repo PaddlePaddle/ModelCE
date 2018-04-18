@@ -1,5 +1,4 @@
-#!/usr/bin/env xonsh
+#!/usr/bin/env bash
 
-rsync --port 8082 -O --no-perms -azP --exclude '/home/superjom/project/paddle3/contrib/modelci/paddle_code' \
-                                     --exclude '/home/superjom/project/paddle3/contrib/modelci/models' \
-                                     ../modelci rsync://172.19.61.250/projects/
+rsync --port 8003 -O --no-perms -azP ../modelce rsync://yq01-sys-hic-v100-box-a223-0007.yq01.baidu.com/projects/
+rsync --port 8003 -O --no-perms -azP ../modelce rsync://yq01-sys-hic-v100-box-a223-0007.yq01.baidu.com/projects/
