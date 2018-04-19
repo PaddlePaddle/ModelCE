@@ -91,3 +91,19 @@ If we want to run KPIs of some selected commits, e.g., all merge commits in the 
    - If given a command line flag `--retry-failed`, this program also try to build and run those with build status is "FAILED".
    - **We can run as many instances of this program on all available computers to complete all selected commits as soon as possible**.
    - **We can add/delete commits in the Google Sheet when the above program is running.**
+
+## Analyses the stability of a model
+
+Before add a new model to the baseline. We must ensure that the kpi data has a little change in each running. In this way, we can say the Continuous Evaluation System is workable.
+
+When you want to check the stability of a model, you can use the following file:
+- `run.xsh` , a script to check the stability of given model.
+
+It need two parameter：
+- `--task_dir` , the model  dir name you want to check，it should be in the tasks dir of CE framework.
+- `--times` , the times you want to run the model.
+
+This is a example：
+```bash
+./run.xsh --task_dir=resnet50 --times=10
+```
