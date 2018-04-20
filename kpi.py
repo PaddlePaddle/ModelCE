@@ -2,7 +2,7 @@ from __future__ import division
 import json
 import numpy as np
 import logging
-from config import pjoin
+import os
 
 
 class TestError(Exception):
@@ -94,10 +94,10 @@ class GreaterWorseKpi(Kpi):
         It seems that compare every batch is too sensitive. So we just compare KPI.
         '''
         self.root = root
-        cur_data = load_records_from(pjoin(root,
-                                           self.out_file))[self.skip_head:]
-        his_data = load_records_from(pjoin(root,
-                                           self.his_file))[self.skip_head:]
+        cur_data = load_records_from(os.path.join(
+            root, self.out_file))[self.skip_head:]
+        his_data = load_records_from(os.path.join(
+            root, self.his_file))[self.skip_head:]
 
         self.ratio = self.compare_with(cur_data, his_data)
         return (- self.ratio) < self.diff_thre
@@ -110,11 +110,11 @@ class GreaterWorseKpi(Kpi):
 
     @property
     def cur_data(self):
-        return load_records_from(pjoin(self.root, self.out_file))
+        return load_records_from(os.path.join(self.root, self.out_file))
 
     @property
     def baseline_data(self):
-        return load_records_from(pjoin(self.root, self.his_file))
+        return load_records_from(os.path.join(self.root, self.his_file))
 
     def persist(self):
         lines = []
@@ -159,10 +159,10 @@ class LessWorseKpi(GreaterWorseKpi):
 
     def evaluate(self, root):
         self.root = root
-        cur_data = load_records_from(pjoin(root,
-                                           self.out_file))[self.skip_head:]
-        his_data = load_records_from(pjoin(root,
-                                           self.his_file))[self.skip_head:]
+        cur_data = load_records_from(
+            os.path.join(root, self.out_file))[self.skip_head:]
+        his_data = load_records_from(
+            os.path.join(root, self.his_file))[self.skip_head:]
         self.ratio = self.compare_with(cur_data, his_data)
         return (- self.ratio) < self.diff_thre
 
@@ -174,11 +174,11 @@ class LessWorseKpi(GreaterWorseKpi):
 
     @property
     def cur_data(self):
-        return load_records_from(pjoin(self.root, self.out_file))
+        return load_records_from(os.path.join(self.root, self.out_file))
 
     @property
     def baseline_data(self):
-        return load_records_from(pjoin(self.root, self.his_file))
+        return load_records_from(os.path.join(self.root, self.his_file))
 
     @property
     def fail_info(self):

@@ -9,6 +9,9 @@ from model import transformer, position_encoding_init
 from optim import LearningRateScheduler
 from config import *
 
+from continuous_evaluation import (train_acc_kpi, test_acc_kpi,
+                                   train_duration_kpi, tracking_kpis)
+
 
 def pad_batch_data(insts,
                    pad_idx,
@@ -209,8 +212,8 @@ def main():
 
     init = False
     train_data = read_multiple(reader=train_data, count=dev_count)
+    start_time = time.time()
     for pass_id in xrange(TrainTaskConfig.pass_num):
-        pass_start_time = time.time()
         for batch_id, data in enumerate(train_data()):
             feed_list = []
             lr_rate = lr_scheduler.update_learning_rate()
@@ -237,21 +240,20 @@ def main():
             )  # sum the cost from multi devices
             total_token_num = token_num_val.sum()
             total_avg_cost = total_sum_cost / total_token_num
+            train_ppl = np.exp([min(total_avg_cost, 100)])
             print("epoch: %d, batch: %d, sum loss: %f, avg loss: %f, ppl: %f" %
                   (pass_id, batch_id, total_sum_cost, total_avg_cost,
-                   np.exp([min(total_avg_cost, 100)])))
+                   train_ppl))
             init = True
         # Validate and save the model for inference.
         val_avg_cost, val_ppl = test(test_exe)
-        pass_end_time = time.time()
-        time_consumed = pass_end_time - pass_start_time
-        print("epoch: %d, val avg loss: %f, val ppl: %f, "
-              "consumed %fs" % (pass_id, val_avg_cost, val_ppl, time_consumed))
-        fluid.io.save_inference_model(
-            os.path.join(TrainTaskConfig.model_dir,
-                         "pass_" + str(pass_id) + ".infer.model"),
-            encoder_input_data_names + decoder_input_data_names[:-1],
-            [predict], exe)
+    end_time = time.time()
+
+    train_acc_kpi.add_record(np.array(train_ppl, dtype='float32'))
+    test_acc_kpi.add_record(np.array(val_ppl, dtype='float32'))
+    train_duration_kpi.add_record(end_time - start_time)
+    print("train_ppl: %f, val_ppl: %f, duration: %f\n" %
+          (train_ppl, val_ppl, end_time - start_time))
 
 
 if __name__ == "__main__":
