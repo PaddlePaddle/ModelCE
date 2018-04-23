@@ -51,8 +51,9 @@ def update_baseline():
 
                 for kpi in tracking_kpis:
                     kpi.root = task_dir
-                    if kpi.compare_with(kpi.cur_data, kpi.baseline_data) > config.kpi_update_threshold:
-                        log.warn('updating kpi: ', kpi.cur_data)
+                    better_ratio = kpi.compare_with(kpi.cur_data, kpi.baseline_data)
+                    if  better_ratio > config.kpi_update_threshold:
+                        log.warn('current kpi %s better than history by %f, update baseline' % (kpi.out_file, better_ratio))
                         cp @(kpi.out_file) @(kpi.his_file)
 
         git commit -a -m @(message)
