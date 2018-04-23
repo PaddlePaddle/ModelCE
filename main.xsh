@@ -41,8 +41,20 @@ def update_baseline():
             cd @(task_dir)
             print('task_dir', task_dir)
             if os.path.isdir('latest_kpis'):
-                print('coping')
-                cp *_factor.txt latest_kpis/
+                # update baseline if the latest kpi is better than history
+                with PathRecover():
+                    cd @(config.workspace)
+                    env = {}
+                    exec('from tasks.%s.continuous_evaluation import tracking_kpis'
+                        % task_name, env)
+                    tracking_kpis = env['tracking_kpis']
+
+                for kpi in tracking_kpis:
+                    kpi.root = task_dir
+                    if kpi.compare_with(kpi.cur_data, kpi.baseline_data) > config.kpi_update_threshold:
+                        log.warn('updating kpi: ', kpi.cur_data)
+                        cp @(kpi.out_file) @(kpi.his_file)
+
         git commit -a -m @(message)
         git push
 

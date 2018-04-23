@@ -19,6 +19,9 @@ baseline_path = pjoin(workspace, 'tasks')
 
 tmp_root = pjoin(workspace, "tmp")
 
+# if the latest kpi is better than best kpi than 1%, update the best kpi.
+kpi_update_threshold = 0.01
+
 # mongodb config
 db_name = "ce"
 table_name = "logs"
