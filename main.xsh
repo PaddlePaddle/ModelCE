@@ -56,8 +56,15 @@ def update_baseline():
                         log.warn('current kpi %s better than history by %f, update baseline' % (kpi.out_file, better_ratio))
                         cp @(kpi.out_file) @(kpi.his_file)
 
-        git commit -a -m @(message)
-        git push
+        if $(git diff):
+            log.warn('update github baseline')
+            '''
+            due to the selected update controled by `config.kpi_update_threshold`, if one task passed, there might be no baselines to update.
+            '''
+            git commit -a -m @(message)
+            git push
+        else:
+            log.warn('no baseline need to update')
 
 
 def refresh_baseline_workspace():
