@@ -8,7 +8,7 @@ import json
 db = MongoDB(config.db_name)
 
 
-def add_evaluation_record(commitid, date, task, passed, infos, kpis, kpi_types):
+def add_evaluation_record(commitid, date, task, passed, infos, kpis, kpi_types, actived):
     '''
     commitid: str
     date: UNIX timestamp
@@ -33,5 +33,6 @@ def add_evaluation_record(commitid, date, task, passed, infos, kpis, kpi_types):
         'kpis-keys': list(kpis.keys()),
         'kpis-values': json.dumps(list(kpis[key].tolist() for key in kpis.keys())),
         'kpi-types': [kpi_types[key] for key in kpis.keys()],
+        'actived': actived,
     }
     db.insert_one(config.table_name, record)

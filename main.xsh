@@ -50,6 +50,8 @@ def update_baseline():
                     tracking_kpis = env['tracking_kpis']
 
                 for kpi in tracking_kpis:
+                    # if the kpi is not actived, do not update baseline.
+                    if not kpi.actived: continue
                     kpi.root = task_dir
                     better_ratio = kpi.compare_with(kpi.cur_data, kpi.baseline_data)
                     if  better_ratio > config.kpi_update_threshold:
@@ -120,12 +122,7 @@ def evaluate(task_name):
         cd @(task_dir)
         ./run.xsh
 
-        # load kpis
-        cd @(config.workspace)
-        env = {}
-        exec('from tasks.%s.continuous_evaluation import tracking_kpis'
-             % task_name, env)
-        tracking_kpis = env['tracking_kpis']
+        tracking_kpis = get_kpi_tasks()
 
         # evaluate all the kpis
         eval_infos = []
@@ -134,11 +131,12 @@ def evaluate(task_name):
         passed = True
         for kpi in tracking_kpis:
             suc = kpi.evaluate(task_dir)
-            if not suc:
+            if not suc and kpi.actived:
+                ''' Only if the kpi is actived, its evaluation result would affect the overall tasks's result. '''
                 passed = False
             kpis[kpi.name] = kpi.cur_data
             kpi_types[kpi.name] = kpi.__class__.__name__
-            # if failed, continue to evaluate all the kpis to get full statistics.
+            # if failed, still continue to evaluate the other kpis to get full statistics.
             eval_infos.append(kpi.fail_info if not suc else kpi.success_info)
         return passed, eval_infos, kpis, kpi_types
 
@@ -167,6 +165,7 @@ def display_success_info():
     paddle_commit = repo.get_commit(config.paddle_path)
     log.warn('Evaluate [%s] successed!' % paddle_commit)
 
+
 def try_start_mongod():
     out = $(ps ax | grep mongod).strip().split('\n')
     print('out', out)
@@ -174,5 +173,15 @@ def try_start_mongod():
         log.warn('starting mongodb')
         mkdir -p /chunwei/ce_mongo.db
         mongod --dbpath /chunwei/ce_mongo.db &
+
+
+def get_kpi_tasks(task_name):
+    with PathRecover():
+        cd @(config.workspace)
+        env = {}
+        exec('from tasks.%s.continuous_evaluation import tracking_kpis'
+             % task_name, env)
+        tracking_kpis = env['tracking_kpis']
+        return tracking_kpis
 
 main()

@@ -12,12 +12,21 @@ class TestError(Exception):
 class Kpi(object):
     dic = {}
 
-    def __init__(self, name, desc='', out_file=None, his_file=None):
-        ''' Interface for Kpi tracker.  '''
+    def __init__(self,
+                 name,
+                 desc='',
+                 out_file=None,
+                 his_file=None,
+                 actived=True):
+        ''' Interface for Kpi tracker.  
+        actived: whether this test is turn on
+            The test will yield error if failed only if it is actived.
+        '''
         self.name = name
         self.desc = desc
         self.out_file = out_file
         self.his_file = "latest_kpis/" + out_file if his_file is None else his_file
+        self.actived = actived
         self.records = []
 
     def add_record(self, rcd):
@@ -30,16 +39,6 @@ class Kpi(object):
     def persist(self):
         ''' Persist the evalution result in some way. '''
         raise NotImplementedError
-
-    # @property
-    # def fail_info(self):
-    #     ''' Failure information '''
-    #     raise NotImplementedError
-
-    # @property
-    # def success_info(self):
-    #     ''' Success information '''
-    #     raise NotImplementedError
 
     @staticmethod
     def compare_with(cur, other):
@@ -80,12 +79,12 @@ class Kpi(object):
 class GreaterWorseKpi(Kpi):
     ''' Evaluator for any factors that large value is bad, trainning cost for example. '''
 
-    def __init__(self, name, diff_thre, skip_head=2):
+    def __init__(self, name, diff_thre, skip_head=2, actived=True):
         '''
         diff_thre: difference threshold.
         '''
         super(GreaterWorseKpi, self).__init__(
-            name, out_file='%s_factor.txt' % name)
+            name, out_file='%s_factor.txt' % name, actived=actived)
         self.skip_head = skip_head
         self.diff_thre = diff_thre
 
@@ -94,13 +93,13 @@ class GreaterWorseKpi(Kpi):
         It seems that compare every batch is too sensitive. So we just compare KPI.
         '''
         self.root = root
-        cur_data = load_records_from(pjoin(root,
-                                           self.out_file))[self.skip_head:]
-        his_data = load_records_from(pjoin(root,
-                                           self.his_file))[self.skip_head:]
+        cur_data = load_records_from(
+            pjoin(root, self.out_file))[self.skip_head:]
+        his_data = load_records_from(
+            pjoin(root, self.his_file))[self.skip_head:]
 
         self.ratio = self.compare_with(cur_data, his_data)
-        return (- self.ratio) < self.diff_thre
+        return (-self.ratio) < self.diff_thre
 
     @staticmethod
     def compare_with(cur, other):
@@ -136,35 +135,40 @@ class GreaterWorseKpi(Kpi):
 
     @property
     def fail_info(self):
-        return "[{name}] failed, diff ratio: {ratio} larger than {thre}.".format(
-            name=self.name,
-            ratio=-self.ratio,
-            thre=self.diff_thre)
+        info = "[{name}] failed, diff ratio: {ratio} larger than {thre}.".format(
+            name=self.name, ratio=-self.ratio, thre=self.diff_thre)
+        if not self.actived:
+            info = "Task is disabled, " + info
+        return info
 
     @property
     def success_info(self):
-        return "[{name}] pass".format(name=self.name)
+        info = "[{name}] pass".format(name=self.name)
+        if not self.actived:
+            info = "Task is disabled, " + info
+        return info
 
 
 class LessWorseKpi(GreaterWorseKpi):
     ''' Evaluator for any factors that less value is bad, trainning acc for example. '''
 
-    def __init__(self, name, diff_thre, skip_head=2):
+    def __init__(self, name, diff_thre, skip_head=2, actived=True):
         '''
         diff_thre: difference threshold.
         '''
-        super(LessWorseKpi, self).__init__(name, diff_thre, skip_head)
+        super(LessWorseKpi, self).__init__(
+            name, diff_thre, skip_head, actived=actived)
         self.skip_head = skip_head
         self.diff_thre = diff_thre
 
     def evaluate(self, root):
         self.root = root
-        cur_data = load_records_from(pjoin(root,
-                                           self.out_file))[self.skip_head:]
-        his_data = load_records_from(pjoin(root,
-                                           self.his_file))[self.skip_head:]
+        cur_data = load_records_from(
+            pjoin(root, self.out_file))[self.skip_head:]
+        his_data = load_records_from(
+            pjoin(root, self.his_file))[self.skip_head:]
         self.ratio = self.compare_with(cur_data, his_data)
-        return (- self.ratio) < self.diff_thre
+        return (-self.ratio) < self.diff_thre
 
     @staticmethod
     def compare_with(cur, other):
@@ -182,14 +186,18 @@ class LessWorseKpi(GreaterWorseKpi):
 
     @property
     def fail_info(self):
-        return "[{name}] failed, diff ratio: {ratio} larger than {thre}.".format(
-            name=self.name,
-            ratio=-self.ratio,
-            thre=self.diff_thre)
+        info = "[{name}] failed, diff ratio: {ratio} larger than {thre}.".format(
+            name=self.name, ratio=-self.ratio, thre=self.diff_thre)
+        if not self.actived:
+            info = "Task is disabled, " + info
+        return info
 
     @property
     def success_info(self):
-        return "[{name}] pass".format(name=self.name)
+        info = "[{name}] pass".format(name=self.name)
+        if not self.actived:
+            info = "Task is disabled, " + info
+        return info
 
 
 CostKpi = GreaterWorseKpi
