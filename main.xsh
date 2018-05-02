@@ -88,11 +88,12 @@ def evaluate_tasks():
 
         if mode != "baseline_test":
             log.warn('add evaluation %s result to mongodb' % task)
+            kpis = get_kpi_tasks(task)
             pst.add_evaluation_record(paddle_commit,
                                       commit_time,
                                       task,
                                       passed,
-                                      eval_infos, kpis, kpi_types)
+                                      eval_infos, kpis, kpi_types, kpis)
         if not passed:
             all_passed = False
     return all_passed

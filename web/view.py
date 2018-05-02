@@ -79,8 +79,7 @@ def build_compare_page():
 
     return page.compile_str(), (
         commit_compare_select_snip,
-        commit_compare_result_snip,
-    )
+        commit_compare_result_snip, )
 
 
 def create_middle_align_box():
@@ -151,12 +150,10 @@ class CommitDetailSnip(Snippet):
 
     def logic(self, commitid):
         task_kpis = query_commit_from_db(commitid)
-        res = objdict(
-            version=dict(
-                commit=commitid,
-                passed=tasks_success(task_kpis),
-                kpis=task_kpis,
-            ))
+        res = objdict(version=dict(
+            commit=commitid,
+            passed=tasks_success(task_kpis),
+            kpis=task_kpis, ))
         return res
 
 
@@ -166,11 +163,10 @@ class CommitCompareSelectSnip(Snippet):
     @property
     def html(self):
         Tag('h2', 'Compare').as_row()
-        with Tag(
-                'form',
-                class_='container-fluid',
-                method='GET',
-                action='/commit/compare').as_row():
+        with Tag('form',
+                 class_='container-fluid',
+                 method='GET',
+                 action='/commit/compare').as_row():
             with Tag('select', name='cur', class_='form-control').as_col(5):
                 with FOR('rcd in %s' % self.KEY('records')):
                     Tag('option',
@@ -209,8 +205,7 @@ class CommitStatusSnip(Snippet):
                 with IF('commit.passed') as f:
                     with Tag(
                             'a',
-                            class_=
-                            'list-group-item list-group-item-action list-group-item-success',
+                            class_='list-group-item list-group-item-action list-group-item-success',
                             href=href_val):
                         Tag('b', VAL('commit.shortcommit'))
                         Tag('span', VAL('commit.date'))
@@ -219,17 +214,14 @@ class CommitStatusSnip(Snippet):
 
                     with Tag(
                             'a',
-                            class_=
-                            'list-group-item list-group-item-action list-group-item-secondary',
+                            class_='list-group-item list-group-item-action list-group-item-secondary',
                             href=href_val):
                         Tag('b', VAL('commit.shortcommit'))
                         Tag('span', VAL('commit.date'))
 
     def logic(self):
         commits = get_commits()
-        return {
-            self.KEY('commits'): [v for v in reversed(commits)],
-        }
+        return {self.KEY('commits'): [v for v in reversed(commits)], }
 
 
 class CommitCompareResultSnip(Snippet):
@@ -255,8 +247,8 @@ class CommitCompareResultSnip(Snippet):
                         with table().set_striped():
                             RawHtml('<thead class="thead-dark"><tr>')
                             RawHtml(
-                                '<th>KPI</th><th>improvement proportion(red better)</th>'
-                            )
+                                '<th>KPI %s </th><th>improvement proportion(red better)</th>'
+                                % (VAL('task.kpis[5]')))
                             RawHtml('</tr></thead>')
 
                             with FOR('kpi in task.kpis'):
@@ -265,15 +257,15 @@ class CommitCompareResultSnip(Snippet):
                                     with IF('kpi.ratio > 0.01 or kpi.ratio < -0.01'
                                             ) as f1:
                                         with IF('kpi.ratio > 0') as f2:
-                                            table.col(
-                                                VAL("'%.2f' % kpi.ratio | float"
-                                                    ) + '%',
-                                                style='color: red;')
+                                            table.col(VAL(
+                                                "'%.2f' % kpi.ratio | float") +
+                                                      '%',
+                                                      style='color: red;')
                                             f2.add(STMT('else'), -1)
-                                            table.col(
-                                                VAL("'%.2f' % kpi.ratio | float"
-                                                    ) + '%',
-                                                style='color: green;')
+                                            table.col(VAL(
+                                                "'%.2f' % kpi.ratio | float") +
+                                                      '%',
+                                                      style='color: green;')
                                         f1.add(STMT('else'), -1)
                                         table.col(
                                             VAL("'%.2f' % kpi.ratio | float") +
@@ -327,6 +319,7 @@ def get_commit_py_records(commit):
 
 
 def query_commit_from_db(commit):
+    ''' Get the task details belong to a commit from the database. '''
     tasks = db.finds(config.table_name, {'type': 'kpi', 'commitid': commit})
     res = objdict()
     for task in tasks:
@@ -342,11 +335,20 @@ def db_task_record_to_py(task_rcd):
     task = objdict(
         name=task_rcd['task'],
         passed=task_rcd['passed'],
-        commitid=task_rcd['commitid'],
-    )
+        commitid=task_rcd['commitid'], )
+
+    def safe_get_fields(field):
+        if field in task_rcd:
+            return json.loads(task_rcd[field])
+        return None
+
     kpi_vals = json.loads(task_rcd['kpis-values'])
     task.kpis = {}
     infos = parse_infos(task_rcd['infos'])
+    activeds = safe_get_fields('kpi-activeds')
+    unit_reprs = safe_get_fields('kpi-unit-reprs')
+    descs = safe_get_fields('kpi-descs')
+
     for i in range(len(task_rcd['kpis-keys'])):
         kpi_type = Kpi.dic.get(task_rcd['kpi-types'][i])
         kpi = task_rcd['kpis-keys'][i]
@@ -359,7 +361,12 @@ def db_task_record_to_py(task_rcd):
             '%.4f' % kpi_type.cal_kpi(data=kpi_vals[i]),
             # info
             infos[kpi],
-        )
+            # actived
+            activeds[i] if activeds else True,
+            # unit repr
+            "(%s)" % unit_reprs[i] if unit_reprs else "",
+            # desc
+            descs[i] if descs else "", )
     task.infos = task_rcd['infos']
     return task
 

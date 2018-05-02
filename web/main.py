@@ -18,10 +18,8 @@ TEMPLATE_DIR = os.path.join(SERVER_PATH, "template")
 app = Flask(
     "modelce", static_url_path=STATIC_DIR, template_folder=TEMPLATE_DIR)
 cache = Cache(
-    app, config={
-        'CACHE_TYPE': 'filesystem',
-        'CACHE_DIR': './_cache'
-    })
+    app, config={'CACHE_TYPE': 'filesystem',
+                 'CACHE_DIR': './_cache'})
 db = MongoDB(config.db_name)
 
 

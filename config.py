@@ -25,4 +25,3 @@ kpi_update_threshold = 0.3
 # mongodb config
 db_name = "ce"
 table_name = "logs"
-
