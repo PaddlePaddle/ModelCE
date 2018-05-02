@@ -8,8 +8,8 @@ import json
 db = MongoDB(config.db_name)
 
 
-def add_evaluation_record(commitid, date, task, passed, infos, kpis,
-                          kpi_types, kpi_objs):
+def add_evaluation_record(commitid, date, task, passed, infos, kpis, kpi_types,
+                          kpi_objs):
     '''
     persist the evaluation infomation of a task to the database.
 

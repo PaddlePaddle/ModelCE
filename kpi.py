@@ -17,7 +17,7 @@ class Kpi(object):
                  desc='',
                  out_file=None,
                  his_file=None,
-                 actived=True,
+                 actived=False,
                  unit_repr=None):
         ''' Interface for Kpi tracker.  
         actived: whether this test is turn on
@@ -86,7 +86,7 @@ class GreaterWorseKpi(Kpi):
                  name,
                  diff_thre,
                  skip_head=2,
-                 actived=True,
+                 actived=False,
                  unit_repr=None,
                  desc=None):
         '''
@@ -169,7 +169,7 @@ class LessWorseKpi(GreaterWorseKpi):
                  name,
                  diff_thre,
                  skip_head=2,
-                 actived=True,
+                 actived=False,
                  unit_repr=None,
                  desc=None):
         '''
