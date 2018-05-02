@@ -42,12 +42,7 @@ def update_baseline():
             print('task_dir', task_dir)
             if os.path.isdir('latest_kpis'):
                 # update baseline if the latest kpi is better than history
-                with PathRecover():
-                    cd @(config.workspace)
-                    env = {}
-                    exec('from tasks.%s.continuous_evaluation import tracking_kpis'
-                        % task_name, env)
-                    tracking_kpis = env['tracking_kpis']
+                tracking_kpis = get_kpi_tasks(task_name)
 
                 for kpi in tracking_kpis:
                     # if the kpi is not actived, do not update baseline.
@@ -122,7 +117,7 @@ def evaluate(task_name):
         cd @(task_dir)
         ./run.xsh
 
-        tracking_kpis = get_kpi_tasks()
+        tracking_kpis = get_kpi_tasks(task_name)
 
         # evaluate all the kpis
         eval_infos = []
