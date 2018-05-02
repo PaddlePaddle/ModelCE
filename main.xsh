@@ -131,7 +131,7 @@ def evaluate(task_name):
         passed = True
         for kpi in tracking_kpis:
             suc = kpi.evaluate(task_dir)
-            if not suc and kpi.actived:
+            if (not suc) and kpi.actived:
                 ''' Only if the kpi is actived, its evaluation result would affect the overall tasks's result. '''
                 passed = False
             kpis[kpi.name] = kpi.cur_data
