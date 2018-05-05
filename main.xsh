@@ -83,7 +83,7 @@ def evaluate_tasks():
     log.warn('commit', paddle_commit)
     all_passed = True
     tasks = [v for v in get_tasks()]
-    for task in get_tasks():
+    for task in tasks:
         passed, eval_infos, kpis, kpi_types = evaluate(task)
 
         if mode != "baseline_test":

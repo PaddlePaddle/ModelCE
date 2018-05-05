@@ -41,7 +41,22 @@ class Kpi(object):
 
     def persist(self):
         ''' Persist the evalution result in some way. '''
-        raise NotImplementedError
+        lines = []
+        is_iterable = False
+        if self.records:
+            try:
+                is_iterable = iter(self.records[0]) is not None
+            except Exception as e:
+                pass
+        for rcd in self.records:
+            if not is_iterable: rcd = [rcd]
+            rcd = np.array(rcd)
+            rcd = rcd.tolist()
+            lines.append(json.dumps(rcd))
+
+        # empty records still needs to create an empty file.
+        with open(self.out_file, 'w') as f:
+            f.write('\n'.join(lines))
 
     @staticmethod
     def compare_with(cur, other):
@@ -61,11 +76,26 @@ class Kpi(object):
 
     @property
     def cur_data(self):
-        raise NotImplementedError
+        return load_records_from(pjoin(self.root, self.out_file))
 
     @property
     def baseline_data(self):
-        raise NotImplementedError
+        return load_records_from(pjoin(self.root, self.his_file))
+
+    @property
+    def fail_info(self):
+        info = "[{name}] failed, diff ratio: {ratio} larger than {thre}.".format(
+            name=self.name, ratio=-self.ratio, thre=self.diff_thre)
+        if not self.actived:
+            info = "Task is disabled, " + info
+        return info
+
+    @property
+    def success_info(self):
+        info = "[{name}] pass".format(name=self.name)
+        if not self.actived:
+            info = "Task is disabled, " + info
+        return info
 
     @staticmethod
     def __register__(factor):
@@ -112,57 +142,16 @@ class GreaterWorseKpi(Kpi):
             self.skip_head:]
 
         self.ratio = self.compare_with(cur_data, his_data)
-        return (-self.ratio) < self.diff_thre
+        return self.ratio < self.diff_thre
 
     @staticmethod
     def compare_with(cur, other):
         cur_kpi = GreaterWorseKpi.cal_kpi(cur)
         other_kpi = GreaterWorseKpi.cal_kpi(other)
-        return (other_kpi - cur_kpi) / other_kpi
-
-    @property
-    def cur_data(self):
-        return load_records_from(pjoin(self.root, self.out_file))
-
-    @property
-    def baseline_data(self):
-        return load_records_from(pjoin(self.root, self.his_file))
-
-    def persist(self):
-        lines = []
-        is_iterable = False
-        if self.records:
-            try:
-                is_iterable = iter(self.records[0]) is not None
-            except Exception as e:
-                pass
-        for rcd in self.records:
-            if not is_iterable: rcd = [rcd]
-            rcd = np.array(rcd)
-            rcd = rcd.tolist()
-            lines.append(json.dumps(rcd))
-
-        # empty records still needs to create an empty file.
-        with open(self.out_file, 'w') as f:
-            f.write('\n'.join(lines))
-
-    @property
-    def fail_info(self):
-        info = "[{name}] failed, diff ratio: {ratio} larger than {thre}.".format(
-            name=self.name, ratio=-self.ratio, thre=self.diff_thre)
-        if not self.actived:
-            info = "Task is disabled, " + info
-        return info
-
-    @property
-    def success_info(self):
-        info = "[{name}] pass".format(name=self.name)
-        if not self.actived:
-            info = "Task is disabled, " + info
-        return info
+        return (cur_kpi - other_kpi) / other_kpi
 
 
-class LessWorseKpi(GreaterWorseKpi):
+class LessWorseKpi(Kpi):
     ''' Evaluator for any factors that less value is bad, trainning acc for example. '''
 
     def __init__(self,
@@ -192,36 +181,13 @@ class LessWorseKpi(GreaterWorseKpi):
         his_data = load_records_from(pjoin(root, self.his_file))[
             self.skip_head:]
         self.ratio = self.compare_with(cur_data, his_data)
-        return (-self.ratio) < self.diff_thre
+        return self.ratio < self.diff_thre
 
     @staticmethod
     def compare_with(cur, other):
         cur_kpi = LessWorseKpi.cal_kpi(cur)
         other_kpi = LessWorseKpi.cal_kpi(other)
-        return (cur_kpi - other_kpi) / other_kpi
-
-    @property
-    def cur_data(self):
-        return load_records_from(pjoin(self.root, self.out_file))
-
-    @property
-    def baseline_data(self):
-        return load_records_from(pjoin(self.root, self.his_file))
-
-    @property
-    def fail_info(self):
-        info = "[{name}] failed, diff ratio: {ratio} larger than {thre}.".format(
-            name=self.name, ratio=-self.ratio, thre=self.diff_thre)
-        if not self.actived:
-            info = "Task is disabled, " + info
-        return info
-
-    @property
-    def success_info(self):
-        info = "[{name}] pass".format(name=self.name)
-        if not self.actived:
-            info = "Task is disabled, " + info
-        return info
+        return (other_kpi - cur_kpi) / other_kpi
 
 
 CostKpi = GreaterWorseKpi
