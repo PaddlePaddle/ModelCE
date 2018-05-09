@@ -3,6 +3,7 @@ $RAISE_SUBPROC_ERROR = True
 $XONSH_SHOW_TRACEBACK = True
 
 import sys; sys.path.insert(0, '')
+import subprocess
 import config
 from config import pjoin
 from utils import PathRecover, log
@@ -14,26 +15,63 @@ $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
 
 
+def RunCmd(cmd, shellformat=True):
+    """run local cmd"""
+    p = subprocess.Popen(cmd, shell=shellformat, close_fds=True, stdin=subprocess.PIPE, \
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    return (p.returncode, stdout, stderr)
+
+
 def parse_args():
     parser= argparse.ArgumentParser("model benchmark")
     parser.add_argument(
         '--task_dir',
         type=str,
-        default='tasks',
         help='The model dir.')
     parser.add_argument(
-        '--times', type=int, default=10, help='The run times')
+        '--times', type=int, default=5, help='The run times')
     args = parser.parse_args()
     return args
+
+def get_changed_tasks(args):
+    tasks = []
+    print (args.task_dir, args.times)
+    if args.task_dir:
+        tasks = args.task_dir.split()
+        return tasks
+    ret, out, err = RunCmd('''cd tasks; git diff HEAD^ HEAD | grep "diff --git" | awk -F' ' {'print $4'}''')
+    print (ret,out,err)
+    out = out.strip().decode('utf-8')
+    for item in out.split('\n'):
+        task = item.split('/')[1]
+        if task not in tasks:
+            tasks.append(task)
+    return tasks
 
 
 def main():
     args = parse_args()
-    kpis_list = run_task(args.task_dir, args.times)
-    print(kpis_list)
-    ana = AnalysisKpiData(kpis_list)
-    ana.analysis_data()
-    ana.print_result()
+    suc = True
+    fail_models = []
+    tasks = get_changed_tasks(args)
+    times = args.times
+    for task in tasks:
+        try:
+            kpis_list = run_task(task, times)
+            print(kpis_list)
+            ana = AnalysisKpiData(kpis_list)
+            ana.analysis_data()
+            ana.print_result()
+        except Exception as e:
+            print (e)
+            suc = False
+            fail_models.append(task)
+    if suc:
+        print ("all change models successs!")
+    else:
+        print ("fail models:", fail_models)
+        sys.exit(1)
 
 
 def run_task(task_name, times):

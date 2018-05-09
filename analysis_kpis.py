@@ -15,6 +15,7 @@ class AnalysisKpiData(object):
     def __init__(self, kpis_list):
         self.kpis_list = kpis_list
         self.analysis_result = {}
+        self.diff_thre = 0.02
 
     def analysis_data(self):
         """
@@ -44,8 +45,13 @@ class AnalysisKpiData(object):
         """
         print analysis result
         """
+        suc = True
         for kpi_name in self.analysis_result.keys():
-            print('kpi:%s' % kpi_name)
+            if self.analysis_result[kpi_name]['change_rate'] > self.diff_thre:
+                suc = False
+                print("kpi: %s change_tate too bigger !!!!!!!!!!" % kpi_name)
+            else:
+                print('kpi:%s' % kpi_name)
             print('min:%s max:%s mean:%s median:%s std:%s change_rate:%s' %
                   (self.analysis_result[kpi_name]['min'],
                    self.analysis_result[kpi_name]['max'],
@@ -53,3 +59,5 @@ class AnalysisKpiData(object):
                    self.analysis_result[kpi_name]['median'],
                    self.analysis_result[kpi_name]['std'],
                    self.analysis_result[kpi_name]['change_rate']))
+        if not suc:
+            raise Exception("some kpi's change_tate has bigger then thre")
