@@ -32,13 +32,13 @@ def get_changed_tasks(args):
         tasks = args.task_dir.split()
         return tasks
     cd @(config.baseline_path)
-    out = $(git diff HEAD^ HEAD | grep "diff --git")
+    out = $(git diff master | grep "diff --git")
     out = out.strip()
     for item in out.split('\n'):
         task = item.split()[3].split('/')[1]
         if task not in tasks:
             tasks.append(task)
-    print (tasks)
+    log.warn("changed tasks: %s" % tasks)
     return tasks
 
 
