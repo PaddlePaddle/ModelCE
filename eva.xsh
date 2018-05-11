@@ -14,15 +14,6 @@ from analysis_kpis import AnalysisKpiData
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
 
-
-def RunCmd(cmd, shellformat=True):
-    """run local cmd"""
-    p = subprocess.Popen(cmd, shell=shellformat, close_fds=True, stdin=subprocess.PIPE, \
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    return (p.returncode, stdout, stderr)
-
-
 def parse_args():
     parser= argparse.ArgumentParser("model benchmark")
     parser.add_argument(
@@ -40,13 +31,14 @@ def get_changed_tasks(args):
     if args.task_dir:
         tasks = args.task_dir.split()
         return tasks
-    ret, out, err = RunCmd('''cd tasks; git diff HEAD^ HEAD | grep "diff --git" | awk -F' ' {'print $4'}''')
-    print (ret,out,err)
-    out = out.strip().decode('utf-8')
+    cd @(config.baseline_path)
+    out = $(git diff master | grep "diff --git")
+    out = out.strip()
     for item in out.split('\n'):
-        task = item.split('/')[1]
+        task = item.split()[3].split('/')[1]
         if task not in tasks:
             tasks.append(task)
+    log.warn("changed tasks: %s" % tasks)
     return tasks
 
 

@@ -51,7 +51,7 @@ class AnalysisKpiData(object):
                 suc = False
                 print("kpi: %s change_tate too bigger !!!!!!!!!!" % kpi_name)
             else:
-                print('kpi:%s' % kpi_name)
+                log.warn('kpi: %s' % kpi_name)
             print('min:%s max:%s mean:%s median:%s std:%s change_rate:%s' %
                   (self.analysis_result[kpi_name]['min'],
                    self.analysis_result[kpi_name]['max'],
@@ -60,4 +60,4 @@ class AnalysisKpiData(object):
                    self.analysis_result[kpi_name]['std'],
                    self.analysis_result[kpi_name]['change_rate']))
         if not suc:
-            raise Exception("some kpi's change_tate has bigger then thre")
+            raise Exception("some kpi's change_rate has bigger then thre")
