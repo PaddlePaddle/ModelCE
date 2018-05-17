@@ -132,8 +132,9 @@ def evaluate(task_name):
             if (not suc) and kpi.actived:
                 ''' Only if the kpi is actived, its evaluation result would affect the overall tasks's result. '''
                 passed = False
-            log.error("Task [%s] failed!" % task_name)
-            log.error("details:" % kpi.fail_info)
+                log.error("Task [%s] failed!" % task_name)
+                log.error("details:" % kpi.fail_info)
+
             kpis[kpi.name] = kpi.cur_data
             kpi_types[kpi.name] = kpi.__class__.__name__
             # if failed, still continue to evaluate the other kpis to get full statistics.
