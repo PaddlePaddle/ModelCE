@@ -152,14 +152,16 @@ def get_tasks():
 def display_fail_info():
     paddle_commit = repo.get_commit(config.paddle_path)
     infos = pst.db.finds(config.table_name, {'commitid': paddle_commit, 'type': 'kpi' })
+    log.info("infos:", infos)
     log.error('Evaluate [%s] failed!' % paddle_commit)
     log.warn('The details:')
     for info in infos:
-        log.info('task:', info['task'])
-        log.info('passed: ', info['passed'])
-        log.info('infos', '\n'.join(info['infos']))
-        log.info('kpis keys', info['kpis-keys'])
-        log.info('kpis values', info['kpis-values'])
+        if not info['passed']:
+            log.warn('task:', info['task'])
+            log.warn('passed: ', info['passed'])
+            log.warn('infos', '\n'.join(info['infos']))
+            log.warn('kpis keys', info['kpis-keys'])
+            log.warn('kpis values', info['kpis-values'])
 
 
 def display_success_info():
