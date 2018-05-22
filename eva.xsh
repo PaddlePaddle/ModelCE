@@ -64,13 +64,6 @@ def main():
     else:
         log.warn("failed models:", fail_models)
         sys.exit(1)
-
-def get_kpis_status(tracking_kpis):
-    kpis_status = {}
-    for kpi in tracking_kpis:
-        kpis_status[kpi.name] = kpi.actived
-    print (kpis_status)
-    return kpis_status
         
 
 def run_task(task_name, times):
