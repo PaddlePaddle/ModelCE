@@ -84,10 +84,8 @@ def run_task(task_name, times):
         if actived:
             need_mul_times = True
             break
-
     if not need_mul_times:
-        times = 1
-        
+        times = 1        
 
     kpis_list = []
     for i in range(times):
