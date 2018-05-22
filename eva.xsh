@@ -50,9 +50,9 @@ def main():
     times = args.times
     for task in tasks:
         try:
-            kpis_list = run_task(task, times)
+            kpis_status, kpis_list = run_task(task, times)
             print(kpis_list)
-            ana = AnalysisKpiData(kpis_list)
+            ana = AnalysisKpiData(kpis_status, kpis_list)
             ana.analysis_data()
             ana.print_result()
         except Exception as e:
@@ -60,9 +60,9 @@ def main():
             suc = False
             fail_models.append(task)
     if suc:
-        print ("all change models successs!")
+        print("all changed models success!")
     else:
-        print ("fail models:", fail_models)
+        log.warn("failed models:", fail_models)
         sys.exit(1)
 
 
@@ -72,24 +72,35 @@ def run_task(task_name, times):
     '''
     task_dir = pjoin(config.baseline_path, task_name)
     log.warn('run  model', task_name)
+    env = {}
+    exec('from tasks.%s.continuous_evaluation import tracking_kpis'
+             % task_name, env)
+    tracking_kpis = env['tracking_kpis']
+
+    kpis_status = get_kpis_status(tracking_kpis)
+
     kpis_list = []
-    for i in range (0, times):
+    for i in range(times):
         with PathRecover():
             cd @(task_dir)
             ./run.xsh
 
         cd @(config.workspace)
-        env = {}
-        exec('from tasks.%s.continuous_evaluation import tracking_kpis'
-             % task_name, env)
-        tracking_kpis = env['tracking_kpis']
 
         kpis = {}
         for kpi in tracking_kpis:
             kpi.root = task_dir
             kpis[kpi.name] = kpi.cur_data
         kpis_list.append(kpis)
-    return kpis_list
+    return kpis_status, kpis_list
+
+
+def get_kpis_status(tracking_kpis):
+    kpis_status = {}
+    for kpi in tracking_kpis:
+        kpis_status[kpi.name] = kpi.actived
+    print (kpis_status)
+    return kpis_status
 
 
 main()

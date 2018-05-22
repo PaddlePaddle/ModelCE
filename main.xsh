@@ -155,11 +155,12 @@ def display_fail_info():
     log.error('Evaluate [%s] failed!' % paddle_commit)
     log.warn('The details:')
     for info in infos:
-        log.warn('task:', info['task'])
-        log.warn('passed: ', info['passed'])
-        log.warn('infos', '\n'.join(info['infos']))
-        log.warn('kpis keys', info['kpis-keys'])
-        log.warn('kpis values', info['kpis-values'])
+        if not info['passed']:
+            log.warn('task:', info['task'])
+            log.warn('passed: ', info['passed'])
+            log.warn('infos', '\n'.join(info['infos']))
+            log.warn('kpis keys', info['kpis-keys'])
+            log.warn('kpis values', info['kpis-values'])
 
 
 def display_success_info():
