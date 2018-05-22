@@ -72,6 +72,13 @@ def commit_compare():
 
 
 if __name__ == '__main__':
-    host = '0.0.0.0'
-    port = 80
-    app.run(debug=False, host=host, port=port, threaded=True)
+    import argparse
+
+    parser = argparse.ArgumentParser(description='CE Web')
+    parser.add_argument('--port', type=int, default=80, required=False,
+                    help='web service port')
+
+    parser.add_argument('--host', type=str, default='0.0.0.0', required=False,
+                    help='web service host')
+    args = parser.parse_args()
+    app.run(debug=False, host=args.host, port=args.port, threaded=True)
