@@ -79,6 +79,16 @@ def run_task(task_name, times):
 
     kpis_status = get_kpis_status(tracking_kpis)
 
+    need_mul_times = False
+    for actived in kpis_status.values():
+        if actived:
+            need_mul_times = True
+            break
+
+    if not need_mul_times:
+        times = 1
+        
+
     kpis_list = []
     for i in range(times):
         with PathRecover():
