@@ -72,6 +72,7 @@ def run_task(task_name, times):
     '''
     task_dir = pjoin(config.baseline_path, task_name)
     log.warn('run  model', task_name)
+    cd @(config.workspace)
     env = {}
     exec('from tasks.%s.continuous_evaluation import tracking_kpis'
              % task_name, env)
