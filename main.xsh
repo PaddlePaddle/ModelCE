@@ -112,7 +112,6 @@ def evaluate(task_name):
         eval_infos: list of str
             human-readable evaluations result for all the kpis of this task.
         kpis: dict of (kpi_name, list_of_float)
-
     '''
     task_dir = pjoin(config.baseline_path, task_name)
     log.warn('evaluating model', task_name)
@@ -133,6 +132,9 @@ def evaluate(task_name):
             if (not suc) and kpi.actived:
                 ''' Only if the kpi is actived, its evaluation result would affect the overall tasks's result. '''
                 passed = False
+                log.error("Task [%s] failed!" % task_name)
+                log.error("details:", kpi.fail_info)
+
             kpis[kpi.name] = kpi.cur_data
             kpi_types[kpi.name] = kpi.__class__.__name__
             # if failed, still continue to evaluate the other kpis to get full statistics.
@@ -153,11 +155,12 @@ def display_fail_info():
     log.error('Evaluate [%s] failed!' % paddle_commit)
     log.warn('The details:')
     for info in infos:
-        log.info('task:', info['task'])
-        log.info('passed: ', info['passed'])
-        log.info('infos', '\n'.join(info['infos']))
-        log.info('kpis keys', info['kpis-keys'])
-        log.info('kpis values', info['kpis-values'])
+        if not info['passed']:
+            log.warn('task:', info['task'])
+            log.warn('passed: ', info['passed'])
+            log.warn('infos', '\n'.join(info['infos']))
+            log.warn('kpis keys', info['kpis-keys'])
+            log.warn('kpis values', info['kpis-values'])
 
 
 def display_success_info():

@@ -13,7 +13,7 @@ pjoin = os.path.join
 paddle_path = pjoin(workspace, '..')
 #paddle_path = '/chunwei/Paddle'
 
-baseline_repo_url = 'git@github.com:Superjomn/paddle-ce-latest-kpis.git'
+baseline_repo_url = 'git@github.com:PaddlePaddle/paddle-ce-latest-kpis.git'
 
 baseline_path = pjoin(workspace, 'tasks')
 
