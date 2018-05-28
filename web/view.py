@@ -8,6 +8,7 @@ from pypage import *
 from pypage import layout as lyt
 from datetime import datetime, timedelta
 from kpi import Kpi
+from persistence import db
 
 status_page = Page(
     "Evaluation Status", filename="pypage-status.html").enable_bootstrap()
@@ -17,8 +18,8 @@ commit_detail_page = Page(
 compare_page = Page(
     "Continuous Evaluation", filename="pypage-search.html").enable_bootstrap()
 
-db = MongoDB(config.db_name)
-
+dist_page = Page(
+    "Distributation", filename="pypage-search.html").enable_bootstrap().enable_echarts()
 
 def build_index_page():
     page = Page('Continous Evaluation', debug=True).enable_bootstrap()
@@ -81,6 +82,20 @@ def build_compare_page():
         commit_compare_select_snip,
         commit_compare_result_snip, )
 
+def build_scalar_page(task_name):
+    page = Page('KPI Distribution').enable_bootstrap().enable_echarts()
+
+    scalar_snip = ScalarSnip(20, task_name)
+
+    with page.body:
+        NavSnip().html
+        main_container = create_middle_align_box()
+        with main_container:
+            scalar_snip.html
+
+    return page.compile_str(), (
+        scalar_snip,
+    )
 
 def create_middle_align_box():
     with lyt.fluid_container():
@@ -131,6 +146,7 @@ class CommitDetailSnip(Snippet):
             Tag('h2', 'Tasks').as_row()
             with FOR('name,task in version.kpis.items()'):
                 Tag('h4', VAL('name')).as_row()
+                Tag('span', '<a href="/commit/draw_scalar?task=%s">show scalars</a>' % VAL('name')).as_row()
                 with lyt.row():
                     with table().set_striped():
                         RawHtml('<thead class="thead-dark"><tr>')
@@ -307,6 +323,48 @@ class CommitCompareResultSnip(Snippet):
         }
 
 
+class ScalarSnip(Snippet):
+    '''
+    Scalars for the latest N records for all the kpis
+
+    One page for each task.
+    '''
+    def __init__(self, N, task_name):
+        super().__init__()
+        self.N = N
+        self.task_name = task_name
+
+    @property
+    def html(self):
+        with lyt.row():
+            Tag('h3', self.VAL('task_name'))
+            RawHtml('<hr/>')
+
+            with lyt.fluid_container():
+                with FOR('kpi, dist in %s' % self.KEY('kpis')):
+                    with lyt.row():
+                        RawHtml("{{ dist |safe }}")
+
+    def logic(self):
+        # should be sorted by freshness
+        commits = get_commits()
+        kpis = {}
+        for commit in commits:
+            rcd = query_commit_from_db(commit.commit)
+            if self.task_name not in rcd: continue
+            for (kpi,val) in rcd[self.task_name].kpis.items():
+                kpis.setdefault(kpi+'--x', []).append(commit.shortcommit)
+                kpis.setdefault(kpi, []).append(float(val[2]))
+        res = []
+        for (kpi, vals) in kpis.items():
+            print(kpi, vals)
+            if not kpi.endswith('--x'):
+                dist, js_deps = scalar(kpi, kpis[kpi+'--x'], kpis[kpi])
+                res.append((kpi, dist,))
+
+        return {self.KEY('kpis'): res, 'script_list': js_deps}
+
+
 def passed_commits():
     pass
 
@@ -314,7 +372,7 @@ def passed_commits():
 def get_commit_py_records(commit):
     ''' Get python records belonging to commit. '''
     records = query_commit_from_db(commit)
-    print('records.values', records.values())
+    #print('records.values', records.values())
     return [db_task_record_to_py(r) for r in records.values()]
 
 
@@ -339,7 +397,9 @@ def db_task_record_to_py(task_rcd):
 
     def safe_get_fields(field):
         if field in task_rcd:
-            return json.loads(task_rcd[field])
+            print('task_rcd', task_rcd[field])
+            return task_rcd[field]
+            # return json.loads(task_rcd[field])
         return None
 
     kpi_vals = json.loads(task_rcd['kpis-values'])
@@ -376,7 +436,11 @@ class objdict(dict):
         self[key] = value
 
     def __getattr__(self, item):
-        return self[item]
+        try:
+            return self[item]
+        except:
+            print('valid keys:', [k for k in self.keys()])
+            exit(1)
 
 
 def parse_infos(infos):
@@ -401,9 +465,9 @@ def tasks_success(tasks):
     return True
 
 
-def get_commits():
+def get_commits(cond={'type': 'kpi'}):
     ''' get all the commits '''
-    records = db.finds(config.table_name, {'type': 'kpi'})
+    records = db.finds(config.table_name, cond)
 
     # detact whether the task is passed.
     commits = {}

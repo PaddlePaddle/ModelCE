@@ -24,4 +24,10 @@ kpi_update_threshold = 0.3
 
 # mongodb config
 db_name = "ce"
+# for test, use following config
+# db_host = 'ce.paddlepaddle.org'
+# db_port = 8006
+
+db_host = "127.0.0.1"
+db_port = 27017
 table_name = "logs"
