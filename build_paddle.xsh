@@ -6,6 +6,11 @@ import sys; sys.path.insert(0, '')
 import config
 import subprocess
 
+cd @(config.paddle_path)
+cd build
+rm -rf python/dist/*
+rm -rf python/build
+
 subprocess.call("WITH_TESTING=OFF "
     "WITH_GOLANG=OFF "
     "CMAKE_BUILD_TYPE=Release "
