@@ -8,6 +8,7 @@ from pypage import *
 from pypage import layout as lyt
 from datetime import datetime, timedelta
 from kpi import Kpi
+from api import *
 
 status_page = Page(
     "Evaluation Status", filename="pypage-status.html").enable_bootstrap()
@@ -149,7 +150,7 @@ class CommitDetailSnip(Snippet):
                                         alert(c=VAL('kpi[3]')).set_danger()
 
     def logic(self, commitid):
-        task_kpis = query_commit_from_db(commitid)
+        task_kpis = TaskRecord.get_tasks_from_details(commitid)
         res = objdict(version=dict(
             commit=commitid,
             passed=tasks_success(task_kpis),
@@ -188,7 +189,7 @@ class CommitCompareSelectSnip(Snippet):
         RawHtml('<hr/>')
 
     def logic(self):
-        records_ = get_commits()
+        records_ = CommitRecord.query_all_commit_infos()
         return {self.KEY('records'): records_}
 
 
@@ -220,7 +221,7 @@ class CommitStatusSnip(Snippet):
                         Tag('span', VAL('commit.date'))
 
     def logic(self):
-        commits = get_commits()
+        commits = CommitRecord.query_all_commit_infos()
         return {self.KEY('commits'): [v for v in reversed(commits)], }
 
 
@@ -275,8 +276,8 @@ class CommitCompareResultSnip(Snippet):
         print('cur', cur_commit)
         print('base', base_commit)
 
-        cur_rcds = query_commit_from_db(cur_commit)
-        base_rcds = query_commit_from_db(base_commit)
+        cur_rcds = TaskRecord.get_tasks_from_details(cur_commit)
+        base_rcds = TaskRecord.get_tasks_from_details(base_commit)
 
         res = []
         for name in cur_rcds.keys():
@@ -311,66 +312,6 @@ def passed_commits():
     pass
 
 
-def get_commit_py_records(commit):
-    ''' Get python records belonging to commit. '''
-    records = query_commit_from_db(commit)
-    print('records.values', records.values())
-    return [db_task_record_to_py(r) for r in records.values()]
-
-
-def query_commit_from_db(commit):
-    ''' Get the task details belong to a commit from the database. '''
-    tasks = db.finds(config.table_name, {'type': 'kpi', 'commitid': commit})
-    res = objdict()
-    for task in tasks:
-        task = db_task_record_to_py(task)
-        task['task'] = task.name
-        res[task.name] = task
-    return res
-
-
-def db_task_record_to_py(task_rcd):
-    ''' Transfrom a mongodb task record to python record. All the fields should be
-    transformed.'''
-    task = objdict(
-        name=task_rcd['task'],
-        passed=task_rcd['passed'],
-        commitid=task_rcd['commitid'], )
-
-    def safe_get_fields(field):
-        if field in task_rcd:
-            return json.loads(task_rcd[field])
-        return None
-
-    kpi_vals = json.loads(task_rcd['kpis-values'])
-    task.kpis = {}
-    infos = parse_infos(task_rcd['infos'])
-    activeds = safe_get_fields('kpi-activeds')
-    unit_reprs = safe_get_fields('kpi-unit-reprs')
-    descs = safe_get_fields('kpi-descs')
-
-    for i in range(len(task_rcd['kpis-keys'])):
-        kpi_type = Kpi.dic.get(task_rcd['kpi-types'][i])
-        kpi = task_rcd['kpis-keys'][i]
-        task.kpis[kpi] = (
-            # kpi details
-            kpi_vals[i],
-            # type
-            task_rcd['kpi-types'][i],
-            # kpi
-            '%.4f' % kpi_type.cal_kpi(data=kpi_vals[i]),
-            # info
-            infos[kpi],
-            # actived
-            activeds[i] if activeds else True,
-            # unit repr
-            "(%s)" % unit_reprs[i] if unit_reprs else "",
-            # desc
-            descs[i] if descs else "", )
-    task.infos = task_rcd['infos']
-    return task
-
-
 class objdict(dict):
     def __setattr__(self, key, value):
         self[key] = value
@@ -379,49 +320,7 @@ class objdict(dict):
         return self[item]
 
 
-def parse_infos(infos):
-    '''
-    input format: [kpi0] xxxx [kpi1] xxx
-
-    return dic of (kpi, info)
-    '''
-    res = {}
-    for info in infos:
-        lb = info.find('[') + 1
-        rb = info.find(']', lb)
-        kpi = info[lb:rb]
-        info = info[rb + 2:]
-        res[kpi] = info
-    return res
-
-
 def tasks_success(tasks):
     for task in tasks.values():
         if not task['passed']: return False
     return True
-
-
-def get_commits():
-    ''' get all the commits '''
-    records = db.finds(config.table_name, {'type': 'kpi'})
-
-    # detact whether the task is passed.
-    commits = {}
-    for task in records:
-        rcd = db_task_record_to_py(task)
-        commits.setdefault(rcd.commitid, {})[rcd.name] = rcd
-
-    records_ = []
-    commit_set = set()
-    for rcd in records:
-        if rcd['commitid'] not in commit_set:
-            commit_set.add(rcd['commitid'])
-            rcd_ = objdict()
-            rcd_.commit = rcd['commitid']
-            rcd_.shortcommit = rcd['commitid'][:7]
-            rcd_.date = datetime.utcfromtimestamp(int(rcd['date'])) + \
-                            timedelta(hours=8)
-            rcd_.passed = tasks_success(commits[rcd_.commit])
-            records_.append(rcd_)
-
-    return records_

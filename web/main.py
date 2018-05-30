@@ -10,6 +10,7 @@ import json
 import pprint
 from kpi import Kpi
 from view import *
+from api import *
 
 SERVER_PATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 STATIC_DIR = os.path.join(SERVER_PATH, "static")
@@ -32,7 +33,7 @@ def index():
     a list of commitids and their status(passed or not, the info)
     '''
     page, snips = build_index_page()
-    commits = get_commits()
+    commits = CommitRecord.query_all_commit_infos()
     latest_commit = commits[-1].commit
     logics = merge_logics(snips[0].logic(), snips[1].logic(latest_commit))
     print('commits', snips[0].logic())
@@ -54,7 +55,7 @@ def commit_details():
 @cache.cached(timeout=120)
 def commit_compare():
     if 'cur' not in request.args:
-        commits = get_commits()
+        commits = CommitRecord.query_all_commit_infos()
         latest_commit = commits[-1]
         success_commits = [v for v in filter(lambda r: r.passed, commits)]
         latest_success_commit = success_commits[
@@ -72,6 +73,21 @@ def commit_compare():
 
 
 if __name__ == '__main__':
-    host = '0.0.0.0'
-    port = 80
-    app.run(debug=False, host=host, port=port, threaded=True)
+    import argparse
+
+    parser = argparse.ArgumentParser(description='CE Web')
+    parser.add_argument(
+        '--port',
+        type=int,
+        default=80,
+        required=False,
+        help='web service port')
+
+    parser.add_argument(
+        '--host',
+        type=str,
+        default='0.0.0.0',
+        required=False,
+        help='web service host')
+    args = parser.parse_args()
+    app.run(debug=False, host=args.host, port=args.port, threaded=True)
