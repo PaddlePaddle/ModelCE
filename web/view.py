@@ -349,7 +349,7 @@ class ScalarSnip(Snippet):
         # should be sorted by freshness
         commits = get_commits()
         kpis = {}
-        for commit in commits:
+        for commit in commits[:-self.N:-1]:
             rcd = query_commit_from_db(commit.commit)
             if self.task_name not in rcd: continue
             for (kpi,val) in rcd[self.task_name].kpis.items():
