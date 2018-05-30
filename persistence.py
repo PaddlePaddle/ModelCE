@@ -5,7 +5,7 @@ from db import MongoDB
 import config
 import json
 
-db = MongoDB(config.db_name)
+db = MongoDB(config.db_name, host=config.db_host, port=config.db_port)
 
 
 def add_evaluation_record(commitid, date, task, passed, infos, kpis, kpi_types,

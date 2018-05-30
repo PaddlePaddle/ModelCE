@@ -11,6 +11,7 @@ import pprint
 from kpi import Kpi
 from view import *
 from api import *
+import pyecharts
 
 SERVER_PATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 STATIC_DIR = os.path.join(SERVER_PATH, "static")
@@ -67,8 +68,16 @@ def commit_compare():
         base = request.args.get('base')
 
     page, (select_snip, result_snip) = build_compare_page()
-    print('page', page)
     logics = merge_logics(select_snip.logic(), result_snip.logic(cur, base))
+    return render_template_string(page, **logics)
+
+#@cache.cached(timeout=120)
+@app.route('/commit/draw_scalar', methods=["GET"])
+def draw_scalar():
+    task_name = request.args['task']
+
+    page, (scalar_snap,) = build_scalar_page(task_name)
+    logics = merge_logics(scalar_snap.logic())
     return render_template_string(page, **logics)
 
 
@@ -76,18 +85,10 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='CE Web')
-    parser.add_argument(
-        '--port',
-        type=int,
-        default=80,
-        required=False,
-        help='web service port')
+    parser.add_argument('--port', type=int, default=80, required=False,
+                    help='web service port')
 
-    parser.add_argument(
-        '--host',
-        type=str,
-        default='0.0.0.0',
-        required=False,
-        help='web service host')
+    parser.add_argument('--host', type=str, default='0.0.0.0', required=False,
+                    help='web service host')
     args = parser.parse_args()
-    app.run(debug=False, host=args.host, port=args.port, threaded=True)
+    app.run(debug=True, host=args.host, port=args.port, threaded=True)
