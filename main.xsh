@@ -9,23 +9,35 @@ from utils import PathRecover, log
 import persistence as pst
 import os
 import repo
+import argparse
 
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
 
+def parse_args():
+    parser= argparse.ArgumentParser("Tool for running CE models")
+    parser.add_argument(
+        '--modified',
+        action='store_true',
+        help='if set, we will just run modified models.')
+    args = parser.parse_args()
+    return args
 
 def main():
     #try_start_mongod()
-    refresh_baseline_workspace()
-    suc = evaluate_tasks()
+    args = parse_args()
+    if not args.modified:
+        refresh_baseline_workspace()
+    suc = evaluate_tasks(args)
     if suc:
         display_success_info()
         if mode != "baseline_test":
             update_baseline()
         exit 0
     else:
-        display_fail_info()
+        if not args.modified:
+            display_fail_info()
         sys.exit(-1)
         exit -1
 
@@ -72,7 +84,7 @@ def refresh_baseline_workspace():
         git clone @(config.baseline_repo_url) @(config.baseline_path)
 
 
-def evaluate_tasks():
+def evaluate_tasks(args):
     '''
     Evaluate all the tasks. It will continue to run all the tasks even
     if any task is failed to get a summary.
@@ -82,14 +94,18 @@ def evaluate_tasks():
     commit_time = repo.get_commit_date(config.paddle_path)
     log.warn('commit', paddle_commit)
     all_passed = True
-    tasks = [v for v in get_tasks()]
-    for task in get_tasks():
+    if args.modified:
+        tasks = [v for v in get_changed_tasks()]
+    else:
+        tasks = [v for v in get_tasks()]
+    for task in tasks:
         passed, eval_infos, kpis, kpi_types = evaluate(task)
 
         if mode != "baseline_test":
             log.warn('add evaluation %s result to mongodb' % task)
             kpi_objs = get_kpi_tasks(task)
-            pst.add_evaluation_record(commitid = paddle_commit,
+            if not args.modified:
+                pst.add_evaluation_record(commitid = paddle_commit,
                                       date = commit_time,
                                       task = task,
                                       passed = passed,
@@ -185,5 +201,18 @@ def get_kpi_tasks(task_name):
              % task_name, env)
         tracking_kpis = env['tracking_kpis']
         return tracking_kpis
+
+
+def get_changed_tasks():
+    tasks = []
+    cd @(config.baseline_path)
+    out = $(git diff master | grep "diff --git")
+    out = out.strip()
+    for item in out.split('\n'):
+        task = item.split()[3].split('/')[1]
+        if task not in tasks:
+            tasks.append(task)
+    log.warn("changed tasks: %s" % tasks)
+    return ['resnet50']
 
 main()
