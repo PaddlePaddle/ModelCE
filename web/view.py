@@ -166,7 +166,7 @@ class CommitDetailSnip(Snippet):
                                         alert(c=VAL('kpi[3]')).set_danger()
 
     def logic(self, commitid):
-        task_kpis = TaskRecord.get_tasks_from_details(commitid)
+        task_kpis = TaskRecord.get_tasks(commitid)
         res = objdict(version=dict(
             commit=commitid,
             passed=tasks_success(task_kpis),
@@ -205,7 +205,7 @@ class CommitCompareSelectSnip(Snippet):
         RawHtml('<hr/>')
 
     def logic(self):
-        records_ = CommitRecord.query_all_commit_infos()
+        records_ = CommitRecord.get_all()
         return {self.KEY('records'): records_}
 
 
@@ -237,7 +237,7 @@ class CommitStatusSnip(Snippet):
                         Tag('span', VAL('commit.date'))
 
     def logic(self):
-        commits = CommitRecord.query_all_commit_infos()
+        commits = CommitRecord.get_all()
         return {self.KEY('commits'): [v for v in reversed(commits)], }
 
 
@@ -292,15 +292,15 @@ class CommitCompareResultSnip(Snippet):
         print('cur', cur_commit)
         print('base', base_commit)
 
-        cur_rcds = TaskRecord.get_tasks_from_details(cur_commit)
-        base_rcds = TaskRecord.get_tasks_from_details(base_commit)
-
+        cur_rcds = TaskRecord.get_tasks(cur_commit)
+        base_rcds = TaskRecord.get_tasks(base_commit)
         res = []
         for name in cur_rcds.keys():
             cur_task = cur_rcds.get(name, None)
+
             base_task = base_rcds.get(name, None)
             # if eithor do not have some task, skip it.
-            if not (cur_task or base_task): continue
+            if not (cur_task and base_task): continue
 
             record = objdict()
             res.append(record)
@@ -309,7 +309,7 @@ class CommitCompareResultSnip(Snippet):
             for kpi in cur_task.kpis.keys():
                 cur_kpi = cur_task.kpis.get(kpi, None)
                 base_kpi = base_task.kpis.get(kpi, None)
-                if not (cur_kpi or base_kpi): continue
+                if not (cur_kpi and base_kpi): continue
                 kpi_ = objdict()
                 kpi_type = Kpi.dic.get(cur_kpi[1])
 
@@ -348,10 +348,11 @@ class ScalarSnip(Snippet):
 
     def logic(self):
         # should be sorted by freshness
-        commits = CommitRecord.query_all_commit_infos()
+        commits = CommitRecord.get_all()
         kpis = {}
-        for commit in commits:
-            rcd = TaskRecord.get_tasks_from_details(commit.commit)
+        last_N_commit = commits[-20:-1] + [commits[-1]]
+        for commit in last_N_commit:
+            rcd = TaskRecord.get_tasks(commit.commit)
             if self.task_name not in rcd: continue
             for (kpi,val) in rcd[self.task_name].kpis.items():
                 kpis.setdefault(kpi+'--x', []).append(commit.shortcommit)
@@ -387,4 +388,3 @@ def tasks_success(tasks):
     for task in tasks.values():
         if not task['passed']: return False
     return True
-
