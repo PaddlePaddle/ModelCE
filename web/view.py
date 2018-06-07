@@ -350,7 +350,7 @@ class ScalarSnip(Snippet):
         # should be sorted by freshness
         commits = CommitRecord.get_all()
         kpis = {}
-        last_N_commit = commits[-20:-1] + [commits[-1]]
+        last_N_commit = commits[-self.N:-1] + [commits[-1]]
         for commit in last_N_commit:
             rcd = TaskRecord.get_tasks(commit.commit)
             if self.task_name not in rcd: continue
