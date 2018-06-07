@@ -32,36 +32,21 @@ class CommitRecord:
         self.info = ""
 
     @staticmethod
-    def get_all_commitids():
+    def get_all():
         ''' Get all commit records, and sort by latest to oldest.  
         returns: list of CommitRecord
         '''
-        commits = db.find_sections(config.table_name, {'type': 'kpi'},
-                                   {'commitid': 1,
-                                    "_id": 0})
+        commits = db.find_sections(config.table_name, 
+            {'type': 'kpi'}, {'commitid': 1, "_id": 0}, "date")
         commit_ids = []
         for commit in commits:
             if commit['commitid'] not in commit_ids:
                 commit_ids.append(commit['commitid'])
-        return commit_ids
-
-    def query_a_commit_info(self):
-        ''' get the corresponding TaskRecords.
-        returns: list of TaskRecord
-        '''
-        return db.finds(config.table_name,
-                        {'type': 'kpi',
-                         'commitid': self.commit})
-
-    @staticmethod
-    def query_all_commit_infos():
-        '''Get all commit records, returns: list of Commit object'''
-        commits = CommitRecord.get_all_commitids()
-
+        
         records = []
-        for commit in commits:
+        for commit in commit_ids:
             commitobj = CommitRecord(commit)
-            tasks = commitobj.query_a_commit_info()
+            tasks = commitobj.get_commit_record()
             commitobj.commit = commit
             commitobj.shortcommit = commit[:7]
             commitobj.date = datetime.utcfromtimestamp(int(tasks[0]['date'])) + \
@@ -71,6 +56,14 @@ class CommitRecord:
             records.append(commitobj)
 
         return records
+
+    def get_commit_record(self):
+        ''' get the corresponding TaskRecords.
+        returns: list of TaskRecord
+        '''
+        return db.finds(config.table_name,
+                        {'type': 'kpi',
+                         'commitid': self.commit})
 
 
 class TaskRecord(objdict):
@@ -83,17 +76,18 @@ class TaskRecord(objdict):
         self.passed = passed
         self.commitid = commit
 
-    def query_a_task_info(self):
+    def get_task_info(self):
         ''' get the corresponding TaskRecord.
         returns: dict of TaskRecord'''
         return db.find_one(config.table_name, {'type': 'kpi', \
                           'commitid': self.commitid, 'task': self.name})
 
     @staticmethod
-    def get_tasks_from_details(commit):
+    def get_tasks(commit):
         ''' Get the task details belong to a commit from the database. '''
         record = CommitRecord(commit)
-        tasks = record.query_a_commit_info()
+        tasks = record.get_commit_record()
+        print (tasks)
         res = objdict()
         for task in tasks:
             taskobj = TaskRecord(commit, task['task'], task['infos'],
@@ -104,7 +98,7 @@ class TaskRecord(objdict):
 
     def get_kpi_details(self):
         '''Transfrom a mongodb kpi record from lists to a python dict.'''
-        task_info = self.query_a_task_info()
+        task_info = self.get_task_info()
         kpi_infos = {}
         for kpi in task_info['kpis-keys']:
             kpiobj = KpiRecord(kpi)
@@ -128,6 +122,10 @@ class KpiRecord:
         for i in range(len(task_info['kpis-keys'])):
             if self.name == task_info['kpis-keys'][i]:
                 break
+        def safe_get_fields(field):
+            if field in task_info:
+                return task_info[field]
+            return None
         #To keep the kpi datas in order, we should process the data one by one.
         kpi_vals = json.loads(task_info['kpis-values'])
         self.values = kpi_vals[i]
@@ -135,9 +133,15 @@ class KpiRecord:
         self.avg = '%.4f' % Kpi.dic.get(self.type).cal_kpi(data=kpi_vals[i])
         infos = parse_infos(task_info['infos'])
         self.info = infos[self.name]
-        self.activeds = task_info['kpi-activeds'][i]
-        self.unit = task_info['kpi-unit-reprs'][i]
-        self.desc = task_info['kpi-descs'][i]
+        
+        activeds = safe_get_fields('kpi-activeds')
+        self.activeds = activeds[i] if activeds else True
+
+        unit_reprs = safe_get_fields('kpi-unit-reprs')
+        self.unit =  "(%s)" % unit_reprs[i] if unit_reprs else ""   
+
+        descs = safe_get_fields('kpi-descs')        
+        self.desc = descs[i] if descs else ""
 
         return (self.values, self.type, self.avg, self.info, self.activeds,
                 self.unit, self.desc)
