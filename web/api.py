@@ -36,6 +36,7 @@ class CommitRecord:
         ''' Get all commit records, and sort by latest to oldest.  
         returns: list of CommitRecord
         '''
+        # sort by 'date' in ascending order
         commits = db.find_sections(config.table_name, 
             {'type': 'kpi'}, {'commitid': 1, "_id": 0}, "date")
         commit_ids = []
