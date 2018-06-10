@@ -32,7 +32,7 @@ def main():
     suc = evaluate_tasks(args)
     if suc:
         display_success_info()
-        if mode != "baseline_test":
+        if mode != "baseline_test" and not args.modified:
             update_baseline()
         exit 0
     else:
