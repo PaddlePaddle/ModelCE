@@ -70,7 +70,7 @@ class CommitRecord:
         for task in tasks:
             taskobj = TaskRecord(commit, task['task'], task['infos'],
                                  task['passed'])
-            taskobj.kpis = taskobj.get_kpi_details()
+            taskobj.kpis = taskobj.get_kpis()
             res[taskobj.name] = taskobj
         return res
 
@@ -92,8 +92,8 @@ class TaskRecord(objdict):
         self.passed = passed
         self.commitid = commit
 
-    def get_kpi_details(self):
-        '''Transfrom mongodb kpis record from lists to a python dict.
+    def get_kpis(self):
+        '''Get kpis details belong to a task.
         returns dict of KpiRecord
                     keys: kpi name,
                     values: KpiRecord'''
