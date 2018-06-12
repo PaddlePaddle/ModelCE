@@ -61,8 +61,8 @@ class CommitRecord:
     def get_tasks(commit):
         ''' Get the task details belong to a commit. 
         returns:  dict of TaskRecord
-                     keys equal to task name,
-                     values equal to TaskRecord '''
+                     keys: task name,
+                     values: TaskRecord '''
         record = CommitRecord(commit)
         tasks = record.__get_db_record()
         print (tasks)
@@ -95,8 +95,8 @@ class TaskRecord(objdict):
     def get_kpi_details(self):
         '''Transfrom mongodb kpis record from lists to a python dict.
         returns dict of KpiRecord
-                    keys equal to kpi name,
-                    values equal to KpiRecord'''
+                    keys: kpi name,
+                    values: KpiRecord'''
         task_info = self.__get_db_record()
         kpi_infos = {}
         for kpi in task_info['kpis-keys']:
