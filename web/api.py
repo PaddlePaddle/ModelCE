@@ -47,7 +47,7 @@ class CommitRecord:
         records = []
         for commit in commit_ids:
             commitobj = CommitRecord(commit)
-            tasks = commitobj.get_commit_record()
+            tasks = commitobj.__get_db_record()
             commitobj.commit = commit
             commitobj.shortcommit = commit[:7]
             commitobj.date = datetime.utcfromtimestamp(int(tasks[0]['date'])) + \
@@ -55,12 +55,27 @@ class CommitRecord:
 
             commitobj.passed = tasks_success(tasks)
             records.append(commitobj)
-
         return records
 
-    def get_commit_record(self):
-        ''' get the corresponding TaskRecords.
-        returns: list of TaskRecord
+    @staticmethod
+    def get_tasks(commit):
+        ''' Get the task details belong to a commit. 
+        returns:  dict of TaskRecord
+                     keys equal to task name,
+                     values equal to TaskRecord '''
+        record = CommitRecord(commit)
+        tasks = record.__get_db_record()
+        print (tasks)
+        res = objdict()
+        for task in tasks:
+            taskobj = TaskRecord(commit, task['task'], task['infos'],
+                                 task['passed'])
+            taskobj.kpis = taskobj.get_kpi_details()
+            res[taskobj.name] = taskobj
+        return res
+
+    def __get_db_record(self):
+        ''' get the corresponding tasks from database.
         '''
         return db.finds(config.table_name,
                         {'type': 'kpi',
@@ -77,35 +92,22 @@ class TaskRecord(objdict):
         self.passed = passed
         self.commitid = commit
 
-    def get_task_info(self):
-        ''' get the corresponding TaskRecord.
-        returns: dict of TaskRecord'''
-        return db.find_one(config.table_name, {'type': 'kpi', \
-                          'commitid': self.commitid, 'task': self.name})
-
-    @staticmethod
-    def get_tasks(commit):
-        ''' Get the task details belong to a commit from the database. '''
-        record = CommitRecord(commit)
-        tasks = record.get_commit_record()
-        print (tasks)
-        res = objdict()
-        for task in tasks:
-            taskobj = TaskRecord(commit, task['task'], task['infos'],
-                                 task['passed'])
-            taskobj.kpis = taskobj.get_kpi_details()
-            res[taskobj.name] = taskobj
-        return res
-
     def get_kpi_details(self):
-        '''Transfrom a mongodb kpi record from lists to a python dict.'''
-        task_info = self.get_task_info()
+        '''Transfrom mongodb kpis record from lists to a python dict.
+        returns dict of KpiRecord
+                    keys equal to kpi name,
+                    values equal to KpiRecord'''
+        task_info = self.__get_db_record()
         kpi_infos = {}
         for kpi in task_info['kpis-keys']:
             kpiobj = KpiRecord(kpi)
-            kpi_infos[kpi] = kpiobj.get_kpi_info_by_key(task_info)
+            kpi_infos[kpi] = kpiobj.get_kpi_info(task_info)
         return kpi_infos
 
+    def __get_db_record(self):
+        ''' get the corresponding kpis from database'''
+        return db.find_one(config.table_name, {'type': 'kpi', \
+                          'commitid': self.commitid, 'task': self.name})
 
 class KpiRecord:
     def __init__(self, name):
@@ -118,8 +120,8 @@ class KpiRecord:
         self.unit = ""
         self.desc = ""
 
-    def get_kpi_info_by_key(self, task_info):
-        '''Get the kpi infos according to the kpi key'''
+    def get_kpi_info(self, task_info):
+        '''Get the kpi infos according to the kpi name'''
         for i in range(len(task_info['kpis-keys'])):
             if self.name == task_info['kpis-keys'][i]:
                 break

@@ -166,7 +166,7 @@ class CommitDetailSnip(Snippet):
                                         alert(c=VAL('kpi[3]')).set_danger()
 
     def logic(self, commitid):
-        task_kpis = TaskRecord.get_tasks(commitid)
+        task_kpis = CommitRecord.get_tasks(commitid)
         res = objdict(version=dict(
             commit=commitid,
             passed=tasks_success(task_kpis),
@@ -292,8 +292,8 @@ class CommitCompareResultSnip(Snippet):
         print('cur', cur_commit)
         print('base', base_commit)
 
-        cur_rcds = TaskRecord.get_tasks(cur_commit)
-        base_rcds = TaskRecord.get_tasks(base_commit)
+        cur_rcds = CommitRecord.get_tasks(cur_commit)
+        base_rcds = CommitRecord.get_tasks(base_commit)
         res = []
         for name in cur_rcds.keys():
             cur_task = cur_rcds.get(name, None)
@@ -352,7 +352,7 @@ class ScalarSnip(Snippet):
         kpis = {}
         last_N_commit = commits[-self.N:-1] + [commits[-1]]
         for commit in last_N_commit:
-            rcd = TaskRecord.get_tasks(commit.commit)
+            rcd = CommitRecord.get_tasks(commit.commit)
             if self.task_name not in rcd: continue
             for (kpi,val) in rcd[self.task_name].kpis.items():
                 kpis.setdefault(kpi+'--x', []).append(commit.shortcommit)
