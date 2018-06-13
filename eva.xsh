@@ -49,6 +49,9 @@ def main():
     tasks = get_changed_tasks(args)
     times = args.times
     for task in tasks:
+        run_file = os.path.join(config.baseline_path, '%s/run.xsh' % task)
+        if not os.path.exists(run_file):
+            continue
         try:
             kpis_status, kpis_list = run_task(task, times)
             print(kpis_list)
@@ -75,7 +78,7 @@ def run_task(task_name, times):
     cd @(config.workspace)
     env = {}
     exec('from tasks.%s.continuous_evaluation import tracking_kpis'
-             % task_name, env)
+             % task_name.split('-')[0], env)
     tracking_kpis = env['tracking_kpis']
 
     kpis_status = get_kpis_status(tracking_kpis)

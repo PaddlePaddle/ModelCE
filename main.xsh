@@ -99,6 +99,9 @@ def evaluate_tasks(args):
     else:
         tasks = [v for v in get_tasks()]
     for task in tasks:
+        run_file = os.path.join(config.baseline_path, '%s/run.xsh' % task)
+        if not os.path.exists(run_file):
+            continue
         passed, eval_infos, kpis, kpi_types = evaluate(task)
 
         if mode != "baseline_test":
@@ -198,7 +201,7 @@ def get_kpi_tasks(task_name):
         cd @(config.workspace)
         env = {}
         exec('from tasks.%s.continuous_evaluation import tracking_kpis'
-             % task_name, env)
+             % task_name.split('-')[0], env)
         tracking_kpis = env['tracking_kpis']
         return tracking_kpis
 
