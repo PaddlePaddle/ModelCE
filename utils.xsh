@@ -4,7 +4,12 @@ import logging
 class log:
     @staticmethod
     def logger():
-        return logging.getLogger(__name__)
+        mylogger = logging.getLogger(__name__)
+        mylogger.setLevel(logging.INFO)
+        if not mylogger.handlers:
+            ch = logging.StreamHandler()
+            mylogger.addHandler(ch)
+        return mylogger
 
     @staticmethod
     def info(*args):
