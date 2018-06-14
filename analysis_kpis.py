@@ -53,7 +53,7 @@ class AnalysisKpiData(object):
             if is_actived:
                 if self.analysis_result[kpi_name]['change_rate'] > self.diff_thre:
                     suc = False
-                    print("NOTE kpi: %s change_tate too bigger!" % kpi_name)
+                    print("NOTE kpi: %s change_rate too bigger!" % kpi_name)
             log.warn('min:%s max:%s mean:%s median:%s std:%s change_rate:%s' %
                   (self.analysis_result[kpi_name]['min'],
                    self.analysis_result[kpi_name]['max'],
