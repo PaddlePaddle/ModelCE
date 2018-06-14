@@ -99,6 +99,7 @@ def evaluate_tasks(args):
     else:
         tasks = [v for v in get_tasks()]
     for task in tasks:
+        # skip base task directory, it is not a real task
         run_file = os.path.join(config.baseline_path, '%s/run.xsh' % task)
         if not os.path.exists(run_file):
             continue
