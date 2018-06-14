@@ -202,7 +202,7 @@ def get_kpi_tasks(task_name):
         cd @(config.workspace)
         env = {}
         exec('from tasks.%s.continuous_evaluation import tracking_kpis'
-             % task_name.split('-')[0], env)
+             % task_name, env)
         tracking_kpis = env['tracking_kpis']
         return tracking_kpis
 
