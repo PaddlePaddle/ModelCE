@@ -213,6 +213,6 @@ def get_changed_tasks():
         if task not in tasks:
             tasks.append(task)
     log.warn("changed tasks: %s" % tasks)
-    return ['resnet50']
+    return tasks
 
 main()
