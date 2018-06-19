@@ -70,6 +70,7 @@ def update_baseline():
             '''
             due to the selected update controled by `config.kpi_update_threshold`, if one task passed, there might be no baselines to update.
             '''
+            git pull origin master
             git commit -a -m @(message)
             git push
         else:
