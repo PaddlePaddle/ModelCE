@@ -10,6 +10,7 @@ import persistence as pst
 import os
 import repo
 import argparse
+import traceback
 
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
@@ -29,7 +30,7 @@ def main():
     args = parse_args()
     if not args.modified:
         refresh_baseline_workspace()
-    suc = evaluate_tasks(args)
+    suc, exception_task = evaluate_tasks(args)
     if suc:
         display_success_info()
         if mode != "baseline_test" and not args.modified:
@@ -37,7 +38,7 @@ def main():
         exit 0
     else:
         if not args.modified:
-            display_fail_info()
+            display_fail_info(exception_task)
         sys.exit(-1)
         exit -1
 
@@ -95,18 +96,19 @@ def evaluate_tasks(args):
     commit_time = repo.get_commit_date(config.paddle_path)
     log.warn('commit', paddle_commit)
     all_passed = True
+    exception_task = {}
     if args.modified:
         tasks = [v for v in get_changed_tasks()]
     else:
         tasks = [v for v in get_tasks()]
     for task in tasks:
-        passed, eval_infos, kpis, kpi_types = evaluate(task)
-
-        if mode != "baseline_test":
-            log.warn('add evaluation %s result to mongodb' % task)
-            kpi_objs = get_kpi_tasks(task)
-            if not args.modified:
-                pst.add_evaluation_record(commitid = paddle_commit,
+        try:
+            passed, eval_infos, kpis, kpi_types = evaluate(task)
+            if mode != "baseline_test":
+                log.warn('add evaluation %s result to mongodb' % task)
+                kpi_objs = get_kpi_tasks(task)
+                if not args.modified:
+                    pst.add_evaluation_record(commitid = paddle_commit,
                                       date = commit_time,
                                       task = task,
                                       passed = passed,
@@ -114,9 +116,13 @@ def evaluate_tasks(args):
                                       kpis = kpis,
                                       kpi_types = kpi_types,
                                       kpi_objs = kpi_objs)
-        if not passed:
+            if not passed:
+                all_passed = False
+        except Exception as e:
+            exception_task[task] = traceback.format_exc()
             all_passed = False
-    return all_passed
+
+    return all_passed, exception_task
 
 
 def evaluate(task_name):
@@ -166,7 +172,7 @@ def get_tasks():
         return filter(lambda x : not (x.startswith('__') or x.endswith('.md')), subdirs)
 
 
-def display_fail_info():
+def display_fail_info(exception_task):
     paddle_commit = repo.get_commit(config.paddle_path)
     infos = pst.db.finds(config.table_name, {'commitid': paddle_commit, 'type': 'kpi' })
     log.error('Evaluate [%s] failed!' % paddle_commit)
@@ -178,6 +184,9 @@ def display_fail_info():
             log.warn('infos', '\n'.join(info['infos']))
             log.warn('kpis keys', info['kpis-keys'])
             log.warn('kpis values', info['kpis-values'])
+    if exception_task:
+        for task, info in exception_task.items():
+            log.error("%s %s" %(task, info))
 
 
 def display_success_info():
