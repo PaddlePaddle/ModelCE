@@ -1,5 +1,4 @@
 #!/usr/bin/env xonsh
-# yapf: disable
 $RAISE_SUBPROC_ERROR = True
 $XONSH_SHOW_TRACEBACK = True
 
