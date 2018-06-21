@@ -1,4 +1,5 @@
 #!/usr/bin/env xonsh
+# yapf: disable
 $RAISE_SUBPROC_ERROR = True
 $XONSH_SHOW_TRACEBACK = True
 
@@ -109,13 +110,13 @@ def evaluate_tasks(args):
                 kpi_objs = get_kpi_tasks(task)
                 if not args.modified:
                     pst.add_evaluation_record(commitid = paddle_commit,
-                                      date = commit_time,
-                                      task = task,
-                                      passed = passed,
-                                      infos = eval_infos,
-                                      kpis = kpis,
-                                      kpi_types = kpi_types,
-                                      kpi_objs = kpi_objs)
+                                              date = commit_time,
+                                              task = task,
+                                              passed = passed,
+                                              infos = eval_infos,
+                                              kpis = kpis,
+                                              kpi_types = kpi_types,
+                                              kpi_objs = kpi_objs)
             if not passed:
                 all_passed = False
         except Exception as e:
