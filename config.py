@@ -28,6 +28,7 @@ db_name = "ce"
 # db_host = 'ce.paddlepaddle.org'
 # db_port = 8006
 
-db_host = "127.0.0.1"
+
+db_host = os.environ.get('db_host', '127.0.0.1')
 db_port = 27017
 table_name = "logs"
