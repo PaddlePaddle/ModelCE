@@ -17,6 +17,7 @@ os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
 run_models = os.environ.get('run_models', '')
 
+
 def parse_args():
     parser= argparse.ArgumentParser("Tool for running CE models")
     parser.add_argument(
@@ -25,6 +26,7 @@ def parse_args():
         help='if set, we will just run modified models.')
     args = parser.parse_args()
     return args
+
 
 def main():
     #try_start_mongod()
