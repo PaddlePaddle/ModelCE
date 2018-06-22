@@ -10,7 +10,8 @@ pjoin = os.path.join
 #   modelce/
 #     tasks
 # DEBUG
-paddle_path = pjoin(workspace, '..')
+rpath = os.environ.get('rpath', '..')
+paddle_path = pjoin(workspace, rpath)
 #paddle_path = '/chunwei/Paddle'
 
 baseline_repo_url = 'git@github.com:PaddlePaddle/paddle-ce-latest-kpis.git'
