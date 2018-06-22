@@ -86,7 +86,7 @@ def build_compare_page():
 def build_scalar_page(task_name):
     page = Page('KPI Distribution').enable_bootstrap().enable_echarts()
 
-    scalar_snip = ScalarSnip(20, task_name)
+    scalar_snip = ScalarSnip(80, task_name)
 
     with page.body:
         NavSnip().html
