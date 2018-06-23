@@ -15,6 +15,8 @@ import traceback
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
+run_models = os.environ.get('run_models', '')
+
 
 def parse_args():
     parser= argparse.ArgumentParser("Tool for running CE models")
@@ -24,6 +26,7 @@ def parse_args():
         help='if set, we will just run modified models.')
     args = parser.parse_args()
     return args
+
 
 def main():
     #try_start_mongod()
@@ -97,7 +100,9 @@ def evaluate_tasks(args):
     log.warn('commit', paddle_commit)
     all_passed = True
     exception_task = {}
-    if args.modified:
+    if run_models:
+        tasks = run_models.strip().split()
+    elif args.modified:
         tasks = [v for v in get_changed_tasks()]
     else:
         tasks = [v for v in get_tasks()]
@@ -226,3 +231,4 @@ def get_changed_tasks():
     return tasks
 
 main()
+
