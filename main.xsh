@@ -231,5 +231,5 @@ def get_changed_tasks():
     log.warn("changed tasks: %s" % tasks)
     return tasks
 
-main()
 
+main()
