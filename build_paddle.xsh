@@ -29,4 +29,3 @@ subprocess.call("WITH_TESTING=OFF "
 cd @(config.paddle_path)
 cd build
 pip install --upgrade python/dist/*.whl
-
