@@ -12,6 +12,7 @@ cd build
 rm -rf python/dist/*
 rm -rf python/build
 
+
 subprocess.call("WITH_TESTING=OFF "
     "WITH_GOLANG=OFF "
     "CMAKE_BUILD_TYPE=Release "
