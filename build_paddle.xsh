@@ -7,9 +7,11 @@ import config
 import subprocess
 
 cd @(config.paddle_path)
+mkdir -p build
 cd build
 rm -rf python/dist/*
 rm -rf python/build
+
 
 subprocess.call("WITH_TESTING=OFF "
     "WITH_GOLANG=OFF "
@@ -25,6 +27,7 @@ subprocess.call("WITH_TESTING=OFF "
     shell=True,
     cwd=config.paddle_path
 )
+
 
 cd @(config.paddle_path)
 cd build
