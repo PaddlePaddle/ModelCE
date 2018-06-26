@@ -17,7 +17,6 @@ os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
 run_models = os.environ.get('run_models', '')
 
-
 def parse_args():
     parser= argparse.ArgumentParser("Tool for running CE models")
     parser.add_argument(
