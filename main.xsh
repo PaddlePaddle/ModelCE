@@ -12,7 +12,6 @@ import repo
 import argparse
 import traceback
 
-
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
