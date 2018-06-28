@@ -15,6 +15,7 @@ import traceback
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
+specific_tasks = os.environ.get('specific_tasks', '').split(',')
 
 def parse_args():
     parser= argparse.ArgumentParser("Tool for running CE models")
@@ -98,9 +99,15 @@ def evaluate_tasks(args):
     all_passed = True
     exception_task = {}
     if args.modified:
+        log.warn('run changed tasks', tasks)
         tasks = [v for v in get_changed_tasks()]
+    elif specific_tasks:
+        log.warn('run specific tasks', tasks)
+        tasks = specific_tasks
     else:
+        log.warn('run all tasks', tasks)
         tasks = [v for v in get_tasks()]
+        
     for task in tasks:
         try:
             passed, eval_infos, kpis, kpi_types = evaluate(task)
