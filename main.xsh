@@ -98,12 +98,13 @@ def evaluate_tasks(args):
     log.warn('commit', paddle_commit)
     all_passed = True
     exception_task = {}
-    if args.modified:
-        log.warn('run changed tasks', tasks)
-        tasks = [v for v in get_changed_tasks()]
-    elif specific_tasks:
+    
+    if specific_tasks:
         log.warn('run specific tasks', tasks)
         tasks = specific_tasks
+    elif args.modified:
+        log.warn('run changed tasks', tasks)
+        tasks = [v for v in get_changed_tasks()]
     else:
         log.warn('run all tasks', tasks)
         tasks = [v for v in get_tasks()]
