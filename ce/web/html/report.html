@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block sidebar_main %}
+
+<div class="container-fluid">
+
+    <div class="row">
+        <select id="timespan">
+            <option value="7">1 week</option>
+            <option value="7">2 week</option>
+            <option value="7">1 month</option>
+        </select>
+    </div>
+
+    <h2>CE</h2>
+    <table class="table table-hover">
+        <tr>
+            <td>Passed</td>
+            <td>20</td>
+            <td>20%</td>
+        </tr>
+        <tr>
+            <td>Failed</td>
+            <td>20</td>
+            <td>20%</td>
+        </tr>
+    </table>
+    <hr/>
+
+    {% for task in tasks %}
+    <h3><span data-toggle="tooltip" data-placement="top" title="{{task.short_description}}">task0</span></h3>
+    <table class="table table-hover" border="1">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">KPI</th>
+            <th scope="col">Change rate</th>
+            <th scope="col">Value</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        {% for kpi in task.kpis %}
+
+        <tr class="table-{{kpi.status}}">
+            <th scope="row">{{kpi.offset}}</th>
+            <td>
+                    <span data-toggle="tooltip" data-placement="top" title="{{kpi.short_description}}">{{
+                        kpi.name }}
+                    </span>
+            </td>
+            <td>{{ kpi.value }} {{ kpi.unit }}</td>
+            <td>{{ kpi.info }}</td>
+        </tr>
+
+        {% endfor %}
+
+        </tbody>
+    </table>
+
+    <hr/>
+    {% endfor %} <!-- end tasks -->
+
+</div>
+
+
+{% endblock %}

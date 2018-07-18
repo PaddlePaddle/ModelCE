@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Paddle CE</title>
+    <link href="/static/bootstrap-4.1.2/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="/static/bootstrap-4.1.2/css/dashboard.css" rel="stylesheet"/>
+</head>
+
+<body>
+
+<!-- header navigation bar -->
+<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Paddle CE</a>
+    <ul>
+        <li><a href="#">CE framework</a></li>
+        <li><a href="#">CE tasks</a></li>
+    </ul>
+</nav>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <!-- sidebar nav -->
+                {% block sidebar_nav %}
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {{dashboard_active}}" href="/">
+                            <span data-feather="home"></span>
+                            Dashboard <span class="sr-only">(current)</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{reports_active}}" href="/report">
+                            <span data-feather="file"></span>
+                            Reports
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{detils_active}}" href="/details">
+                            <span data-feather="file"></span>
+                            Details
+                        </a>
+                    </li>
+                </ul>
+                {% endblock %}
+                <!-- end sidebar nav -->
+            </div>
+        </nav>
+
+        <!-- sidebar content -->
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">{{sidebar_title}}</h1>
+                {% block sidebar_main %}
+                {% endblock %}
+            </div>
+
+        </main>
+    </div>
+</div>
+
+
+</body>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+
+<script src="/static/popper.min.js"></script>
+<script src="/static/bootstrap-4.1.2/js/bootstrap.min.js"></script>
+
+<!-- Icons -->
+<script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+<script> feather.replace() </script>
+
+<script type="text/javascript">
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+</script>
+
+</html>

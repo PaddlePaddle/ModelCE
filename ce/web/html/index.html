@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block sidebar_main %}
+
+<!--
+
+Record structure:
+
+lastest_commit:
+    Obj(
+        .commit: str
+        .status: 'success' or 'danger'
+        )
+
+commits: listof
+    obj(
+        .commit: str
+        .status: str, 'primary' or 'success'
+        )
+
+tasks: listof
+    listof
+        Obj(
+            .name: str
+            .value: str
+            .unit: str
+            .info: str
+            .status: str, 'success' or 'danger'
+        )
+
+-->
+
+<!-- status list -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-auto list-group">
+            <h2>Running</h2>
+            {% for item in commits %}
+            <a href="/commit/{{item.commit}}"
+               class="list-group-item list-group-item-{{item.status}}">{{item.commit}}</a>
+            {% endfor %}
+        </div>
+
+        <div class="col">
+            <h2>Latest commit</h2>
+
+            <span class="badge badge-{{latest_commit.status}}">{{ latest_commit.commit }}</span>
+
+            <hr/>
+
+            {% for task in tasks %}
+            <h3><span data-toggle="tooltip" data-placement="top" title="{{task.short_description}}">task0</span></h3>
+            <table class="table table-hover" border="1">
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">KPI</th>
+                    <th scope="col">Value</th>
+                    <th scope="col">Status</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {% for kpi in task.kpis %}
+
+                <tr class="table-{{kpi.status}}">
+                    <th scope="row">{{kpi.offset}}</th>
+                    <td>
+                    <span data-toggle="tooltip" data-placement="top" title="{{kpi.short_description}}">{{
+                        kpi.name }}
+                    </span>
+                    </td>
+                    <td>{{ kpi.value }} {{ kpi.unit }}</td>
+                    <td>{{ kpi.info }}</td>
+                </tr>
+
+                {% endfor %}
+
+                </tbody>
+            </table>
+
+            <hr/>
+            {% endfor %} <!-- end tasks -->
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

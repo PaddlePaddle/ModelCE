@@ -24,6 +24,8 @@ addons:
       - python3
       - python3-pip
       - ccache
+      - mongod
+      - redis-server
 
 install:
   - sudo pip3 install -r requirements.txt
@@ -31,7 +33,7 @@ install:
 before_install:
 
 script:
-  - if [[ "$JOB" == "test" ]]; then /bin/bash ./tests.xsh; fi
+  - [[ "$JOB" == "test" ]] && /bin/bash ./test.sh
 
 notifications:
   email:
