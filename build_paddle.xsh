@@ -4,27 +4,33 @@ $XONSH_SHOW_TRACEBACK = True
 
 import sys; sys.path.insert(0, '')
 import config
+import subprocess
 import os
-
-num_workers = os.environ.get('num_workers', 8)
 
 cd @(config.paddle_path)
 mkdir -p build
 cd build
-
-# compile_mode env should be set in teamcity
-cmake .. -DWITH_TESTING=OFF \
-         -DWITH_GOLANG=OFF \
-         -DCMAKE_BUILD_TYPE=Release \
-         -DWITH_GPU=ON \
-         -DWITH_STYLE_CHECK=OFF \
-         -DWITH_FLUID_ONLY=ON \
-         -DWITH_MKLDNN=off
-
-# clean whl
 rm -rf python/dist/*
 rm -rf python/build
-make -j @(num_workers)
-make install
 
+#WITH_TESTING = os.environ.get('WITH_TESTING', 'OFF')
+
+subprocess.call("WITH_TESTING=ON "
+    "WITH_GOLANG=OFF "
+    "CMAKE_BUILD_TYPE=Release "
+    "WITH_GPU=ON "
+    "WITH_STYLE_CHECK=OFF "
+    "WITH_FLUID_ONLY=ON "
+    "WITH_MKL=ON "
+    "WITH_MKLDNN=ON "
+    "WITH_DISTRIBUTE=ON "
+    "WITH_ANAKIN=OFF "
+    "paddle/scripts/paddle_build.sh build",
+    shell=True,
+    cwd=config.paddle_path
+)
+
+
+cd @(config.paddle_path)
+cd build
 pip install --upgrade python/dist/*.whl

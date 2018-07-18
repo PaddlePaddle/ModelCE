@@ -9,23 +9,39 @@ from utils import PathRecover, log
 import persistence as pst
 import os
 import repo
+import argparse
+import traceback
 
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
+specific_tasks = os.environ.get('specific_tasks', None)
+specific_tasks = specific_tasks.split(',') if specific_tasks else []
 
+
+def parse_args():
+    parser= argparse.ArgumentParser("Tool for running CE models")
+    parser.add_argument(
+        '--modified',
+        action='store_true',
+        help='if set, we will just run modified models.')
+    args = parser.parse_args()
+    return args
 
 def main():
     #try_start_mongod()
-    refresh_baseline_workspace()
-    suc = evaluate_tasks()
+    args = parse_args()
+    if not args.modified:
+        refresh_baseline_workspace()
+    suc, exception_task = evaluate_tasks(args)
     if suc:
         display_success_info()
-        if mode != "baseline_test":
+        if mode != "baseline_test" and not args.modified and not specific_tasks:
             update_baseline()
         exit 0
     else:
-        display_fail_info()
+        if not args.modified:
+            display_fail_info(exception_task)
         sys.exit(-1)
         exit -1
 
@@ -58,6 +74,7 @@ def update_baseline():
             '''
             due to the selected update controled by `config.kpi_update_threshold`, if one task passed, there might be no baselines to update.
             '''
+            git pull origin master
             git commit -a -m @(message)
             git push
         else:
@@ -72,7 +89,7 @@ def refresh_baseline_workspace():
         git clone @(config.baseline_repo_url) @(config.baseline_path)
 
 
-def evaluate_tasks():
+def evaluate_tasks(args):
     '''
     Evaluate all the tasks. It will continue to run all the tasks even
     if any task is failed to get a summary.
@@ -82,24 +99,40 @@ def evaluate_tasks():
     commit_time = repo.get_commit_date(config.paddle_path)
     log.warn('commit', paddle_commit)
     all_passed = True
-    tasks = [v for v in get_tasks()]
-    for task in get_tasks():
-        passed, eval_infos, kpis, kpi_types = evaluate(task)
-
-        if mode != "baseline_test":
-            log.warn('add evaluation %s result to mongodb' % task)
-            kpi_objs = get_kpi_tasks(task)
-            pst.add_evaluation_record(commitid = paddle_commit,
-                                      date = commit_time,
-                                      task = task,
-                                      passed = passed,
-                                      infos = eval_infos,
-                                      kpis = kpis,
-                                      kpi_types = kpi_types,
-                                      kpi_objs = kpi_objs)
-        if not passed:
+    exception_task = {}
+    
+    if specific_tasks:
+        tasks = specific_tasks
+        log.warn('run specific tasks', tasks)
+    elif args.modified:
+        tasks = [v for v in get_changed_tasks()]
+        log.warn('run changed tasks', tasks)
+    else:
+        tasks = [v for v in get_tasks()]
+        log.warn('run all tasks', tasks)
+        
+    for task in tasks:
+        try:
+            passed, eval_infos, kpis, kpi_types = evaluate(task)
+            if mode != "baseline_test":
+                log.warn('add evaluation %s result to mongodb' % task)
+                kpi_objs = get_kpi_tasks(task)
+                if not args.modified:
+                    pst.add_evaluation_record(commitid = paddle_commit,
+                                              date = commit_time,
+                                              task = task,
+                                              passed = passed,
+                                              infos = eval_infos,
+                                              kpis = kpis,
+                                              kpi_types = kpi_types,
+                                              kpi_objs = kpi_objs)
+            if not passed:
+                all_passed = False
+        except Exception as e:
+            exception_task[task] = traceback.format_exc()
             all_passed = False
-    return all_passed
+
+    return all_passed, exception_task
 
 
 def evaluate(task_name):
@@ -112,7 +145,6 @@ def evaluate(task_name):
         eval_infos: list of str
             human-readable evaluations result for all the kpis of this task.
         kpis: dict of (kpi_name, list_of_float)
-
     '''
     task_dir = pjoin(config.baseline_path, task_name)
     log.warn('evaluating model', task_name)
@@ -133,6 +165,9 @@ def evaluate(task_name):
             if (not suc) and kpi.actived:
                 ''' Only if the kpi is actived, its evaluation result would affect the overall tasks's result. '''
                 passed = False
+                log.error("Task [%s] failed!" % task_name)
+                log.error("details:", kpi.fail_info)
+
             kpis[kpi.name] = kpi.cur_data
             kpi_types[kpi.name] = kpi.__class__.__name__
             # if failed, still continue to evaluate the other kpis to get full statistics.
@@ -147,17 +182,21 @@ def get_tasks():
         return filter(lambda x : not (x.startswith('__') or x.endswith('.md')), subdirs)
 
 
-def display_fail_info():
+def display_fail_info(exception_task):
     paddle_commit = repo.get_commit(config.paddle_path)
     infos = pst.db.finds(config.table_name, {'commitid': paddle_commit, 'type': 'kpi' })
     log.error('Evaluate [%s] failed!' % paddle_commit)
     log.warn('The details:')
     for info in infos:
-        log.info('task:', info['task'])
-        log.info('passed: ', info['passed'])
-        log.info('infos', '\n'.join(info['infos']))
-        log.info('kpis keys', info['kpis-keys'])
-        log.info('kpis values', info['kpis-values'])
+        if not info['passed']:
+            log.warn('task:', info['task'])
+            log.warn('passed: ', info['passed'])
+            log.warn('infos', '\n'.join(info['infos']))
+            log.warn('kpis keys', info['kpis-keys'])
+            log.warn('kpis values', info['kpis-values'])
+    if exception_task:
+        for task, info in exception_task.items():
+            log.error("%s %s" %(task, info))
 
 
 def display_success_info():
@@ -182,5 +221,18 @@ def get_kpi_tasks(task_name):
              % task_name, env)
         tracking_kpis = env['tracking_kpis']
         return tracking_kpis
+
+
+def get_changed_tasks():
+    tasks = []
+    cd @(config.baseline_path)
+    out = $(git diff master | grep "diff --git")
+    out = out.strip()
+    for item in out.split('\n'):
+        task = item.split()[3].split('/')[1]
+        if task not in tasks:
+            tasks.append(task)
+    log.warn("changed tasks: %s" % tasks)
+    return tasks
 
 main()

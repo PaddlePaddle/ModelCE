@@ -10,10 +10,11 @@ pjoin = os.path.join
 #   modelce/
 #     tasks
 # DEBUG
-paddle_path = pjoin(workspace, '..')
+relative_path = os.environ.get('relative_path', '..')
+paddle_path = pjoin(workspace, relative_path)
 #paddle_path = '/chunwei/Paddle'
 
-baseline_repo_url = 'git@github.com:Superjomn/paddle-ce-latest-kpis.git'
+baseline_repo_url = os.environ.get('repo_url', 'git@github.com:PaddlePaddle/paddle-ce-latest-kpis.git')
 
 baseline_path = pjoin(workspace, 'tasks')
 
@@ -24,4 +25,11 @@ kpi_update_threshold = 0.3
 
 # mongodb config
 db_name = "ce"
+# for test, use following config
+# db_host = 'ce.paddlepaddle.org'
+# db_port = 8006
+
+
+db_host = os.environ.get('db_host', '127.0.0.1')
+db_port = 27017
 table_name = "logs"

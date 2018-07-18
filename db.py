@@ -31,6 +31,10 @@ class MongoDB(object):
         '''
         return self.table(table).find_one(cond)
 
+    def find_sections(self, table, cond, sections, key):
+
+        return self.table(table).find(cond, sections).sort(key)
+
     def find(self, table, cond):
         '''
         Find records.
