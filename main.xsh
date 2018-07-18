@@ -36,11 +36,11 @@ def main():
     suc, exception_task = evaluate_tasks(args)
     if suc:
         display_success_info()
-        if mode != "baseline_test" and not args.modified and not specific_tasks:
+        if mode != "baseline_test" and (not args.modified) and (not specific_tasks):
             update_baseline()
         exit 0
     else:
-        if not args.modified:
+        if (not args.modified) and (not specific_tasks):
             display_fail_info(exception_task)
         sys.exit(-1)
         exit -1
@@ -117,7 +117,7 @@ def evaluate_tasks(args):
             if mode != "baseline_test":
                 log.warn('add evaluation %s result to mongodb' % task)
                 kpi_objs = get_kpi_tasks(task)
-                if not args.modified:
+                if (not args.modified) and (not specific_tasks):
                     pst.add_evaluation_record(commitid = paddle_commit,
                                               date = commit_time,
                                               task = task,
