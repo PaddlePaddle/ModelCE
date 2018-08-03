@@ -187,7 +187,8 @@ def get_tasks():
         subdirs = $(ls @(config.baseline_path)).split()
         if case_type:
             return filter(lambda x : x.startswith('%s_' % case_type), subdirs)
-        return filter(lambda x : not (x.startswith('__') or x.startswith('task_')
+        else:
+            return filter(lambda x : not (x.startswith('__') or x.startswith('model_')
                    or x.endswith('.md')), subdirs)
 
 
@@ -226,11 +227,11 @@ def get_kpi_tasks(task_name):
     with PathRecover():
         cd @(config.workspace)
         env = {}
-        if case_type:
-            exec('from tasks.%s.continuous_evaluation import tracking_kpis'
+        if case_type == 'model':
+            exec('from tasks.%s._ce import tracking_kpis'
                 % task_name, env)
         else:
-            exec('from tasks.%s._ce import tracking_kpis'
+            exec('from tasks.%s.continuous_evaluation import tracking_kpis'
                 % task_name, env)
            
         tracking_kpis = env['tracking_kpis']
