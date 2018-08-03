@@ -17,6 +17,7 @@ os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
 specific_tasks = os.environ.get('specific_tasks', None)
 specific_tasks = specific_tasks.split(',') if specific_tasks else []
+case_type = os.environ.get('case_type', None)
 
 
 def parse_args():
@@ -184,7 +185,10 @@ def get_tasks():
     with PathRecover():
         cd @(config.workspace)
         subdirs = $(ls @(config.baseline_path)).split()
-        return filter(lambda x : not (x.startswith('__') or x.endswith('.md')), subdirs)
+        if case_type:
+            return filter(lambda x : x.startswith('%s_' % case_type), subdirs)
+        return filter(lambda x : not (x.startswith('__') or x.startswith('task_')
+                   or x.endswith('.md')), subdirs)
 
 
 def display_fail_info(exception_task):
