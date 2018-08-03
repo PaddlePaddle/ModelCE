@@ -152,9 +152,9 @@ def evaluate(task_name):
 
     with PathRecover():
         cd @(task_dir)
-        if os.path.exists(".run.sh"):
-            print ("exec .run.sh")
-            ./.run.sh
+        if os.path.exists(".run_ce.sh"):
+            print ("monitoring models repo', exe .run_ce.sh")
+            ./.run_ce.sh
         else:
             print ("exec run.xsh")
             ./run.xsh
