@@ -226,8 +226,13 @@ def get_kpi_tasks(task_name):
     with PathRecover():
         cd @(config.workspace)
         env = {}
-        exec('from tasks.%s.continuous_evaluation import tracking_kpis'
-             % task_name, env)
+        if case_type:
+            exec('from tasks.%s.continuous_evaluation import tracking_kpis'
+                % task_name, env)
+        else:
+            exec('from tasks.%s._ce import tracking_kpis'
+                % task_name, env)
+           
         tracking_kpis = env['tracking_kpis']
         return tracking_kpis
 
