@@ -74,8 +74,15 @@ def run_task(task_name, times):
     log.warn('run  model', task_name)
     cd @(config.workspace)
     env = {}
-    exec('from tasks.%s.continuous_evaluation import tracking_kpis'
-             % task_name, env)
+
+    try:
+        exec('from tasks.%s.continuous_evaluation import tracking_kpis'
+            % task_name, env)
+        log.info("import from continuous_evaluation suc.")
+    except Exception as e:
+        log.warn("import failed. %s" % e)
+        exec('from tasks.%s._ce import tracking_kpis' % task_name, env)
+        log.info("import from _ce suc")
     tracking_kpis = env['tracking_kpis']
 
     kpis_status = get_kpis_status(tracking_kpis)
