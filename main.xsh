@@ -180,19 +180,17 @@ def evaluate(task_name):
         kpi_types = {}
         passed = True
         for kpi in tracking_kpis:
-            log.info("start to evaluation %s" % kpi)
             suc = kpi.evaluate(task_dir)
             if (not suc) and kpi.actived:
                 ''' Only if the kpi is actived, its evaluation result would affect the overall tasks's result. '''
                 passed = False
                 log.error("Task [%s] failed!" % task_name)
                 log.error("details:", kpi.fail_info)
-            log.info("evaluation kpi suc %s" % kpi)
+
             kpis[kpi.name] = kpi.cur_data
             kpi_types[kpi.name] = kpi.__class__.__name__
             # if failed, still continue to evaluate the other kpis to get full statistics.
             eval_infos.append(kpi.fail_info if not suc else kpi.success_info)
-        log.info("evaluation kpi info: %s %s %s" % (passed, eval_infos, kpis))
         return passed, eval_infos, kpis, kpi_types
 
 
