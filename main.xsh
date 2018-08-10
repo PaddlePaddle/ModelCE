@@ -213,7 +213,7 @@ def display_fail_info(exception_task):
     log.error('Evaluate [%s] failed!' % paddle_commit)
     log.warn('The details:')
     for info in infos:
-        if not info['passed']:
+        if not info['passed'] and not info['task'].startswith('model_'):
             log.warn('task:', info['task'])
             log.warn('passed: ', info['passed'])
             log.warn('infos', '\n'.join(info['infos']))
