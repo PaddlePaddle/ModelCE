@@ -11,6 +11,7 @@ import os
 import repo
 import argparse
 import traceback
+import time
 
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
@@ -32,7 +33,7 @@ def parse_args():
 def main():
     #try_start_mongod()
     args = parse_args()
-    if (not args.modified) and (not specific_tasks):
+    if (not args.modified) and (not specific_tasks) and (not case_type):
         refresh_baseline_workspace()
     suc, exception_task = evaluate_tasks(args)
     if suc:
@@ -85,9 +86,21 @@ def update_baseline():
 def refresh_baseline_workspace():
     ''' download baseline. '''
     if mode != "baseline_test":
-        # production mode, clean baseline and rerun
-        rm -rf @(config.baseline_path)
-        git clone @(config.baseline_repo_url) @(config.baseline_path)
+        # ssh from home is not very stable, can be solved by retry.
+        max_retry = 10
+        for cnt in range(max_retry):
+            try:
+                # production mode, clean baseline and rerun
+                rm -rf @(config.baseline_path)
+                git clone @(config.baseline_repo_url) @(config.baseline_path)
+                log.info("git clone %s suc" % config.baseline_repo_url)
+                break
+            except Exception as e:
+                if cnt == max_retry - 1:
+                    raise Exception("git clone failed %s " % e)
+                else:
+                    log.warn('git clone failed %d, %s' % (cnt, e))
+                    time.sleep(3)
 
 
 def evaluate_tasks(args):
@@ -167,17 +180,19 @@ def evaluate(task_name):
         kpi_types = {}
         passed = True
         for kpi in tracking_kpis:
+            log.info("start to evaluation %s" % kpi)
             suc = kpi.evaluate(task_dir)
             if (not suc) and kpi.actived:
                 ''' Only if the kpi is actived, its evaluation result would affect the overall tasks's result. '''
                 passed = False
                 log.error("Task [%s] failed!" % task_name)
                 log.error("details:", kpi.fail_info)
-
+            log.info("evaluation kpi suc %s" % kpi)
             kpis[kpi.name] = kpi.cur_data
             kpi_types[kpi.name] = kpi.__class__.__name__
             # if failed, still continue to evaluate the other kpis to get full statistics.
             eval_infos.append(kpi.fail_info if not suc else kpi.success_info)
+        log.info("evaluation kpi info: %s %s %s" % (passed, eval_infos, kpis))
         return passed, eval_infos, kpis, kpi_types
 
 
@@ -231,11 +246,9 @@ def get_kpi_tasks(task_name):
             exec('from tasks.%s.continuous_evaluation import tracking_kpis'
                 % task_name, env)
             log.info("import from continuous_evaluation suc.")
-        except Exception as e:
-            log.warn("import failed. %s" % e)    
+        except Exception as e: 
             exec('from tasks.%s._ce import tracking_kpis'
                 % task_name, env)
-            log.info("import from _ce suc")
         
         tracking_kpis = env['tracking_kpis']
         print(tracking_kpis)
