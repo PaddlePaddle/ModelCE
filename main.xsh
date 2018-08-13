@@ -171,7 +171,7 @@ def evaluate(task_name):
             ./.run.sh
         else:
             print ("exec run.xsh")
-            sh ./run.xsh
+            ./run.xsh
 
         tracking_kpis = get_kpi_tasks(task_name)
 
