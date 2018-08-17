@@ -160,9 +160,13 @@ class CommitDetailSnip(Snippet):
                                 table.col(VAL('kpiname'))
                                 with table.col():
                                     RawHtml(
-                                        '<pre><code>{{ kpi[2] }}</code></pre>')
+                                        '<pre><code>{{ kpi[2] }}{{kpi[5]}}</code></pre>')
+                                #with table.col():
+                                #    RawHtml(
+                                #        '<pre><code>{{ kpi[6] }}</code></pre>')
                                 with table.col():
-                                    with IF('kpi[3] != "pass"'):
+                                    # alert kpi which is activated.
+                                    with IF('kpi[3] != "pass" and kpi[4]'):
                                         alert(c=VAL('kpi[3]')).set_danger()
 
     def logic(self, commitid):
@@ -173,7 +177,7 @@ class CommitDetailSnip(Snippet):
             kpis=task_kpis, ))
         return res
 
-
+            
 class CommitCompareSelectSnip(Snippet):
     ''' Comparasion select form. '''
 
