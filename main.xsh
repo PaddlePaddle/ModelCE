@@ -165,13 +165,16 @@ def evaluate(task_name):
     log.warn('evaluating model', task_name)
 
     with PathRecover():
-        cd @(task_dir)
-        if os.path.exists(".run.sh"):
-            print ("exec .run.sh")
-            ./.run.sh
-        else:
-            print ("exec run.xsh")
-            ./run.xsh
+        try:
+            cd @(task_dir)
+            if os.path.exists(".run.sh"):
+                print ("exec .run.sh")
+                ./.run.sh
+            else:
+                print ("exec run.xsh")
+                sh ./run.xsh
+        except Exception as e:
+            print(e)
 
         tracking_kpis = get_kpi_tasks(task_name)
 
