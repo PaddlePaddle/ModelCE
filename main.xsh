@@ -167,12 +167,7 @@ def evaluate(task_name):
     with PathRecover():
         try:
             cd @(task_dir)
-            if os.path.exists(".run.sh"):
-                print ("exec .run.sh")
-                ./.run.sh
-            else:
-                print ("exec run.xsh")
-                sh ./run.xsh
+            ./run.xsh
         except Exception as e:
             print(e)
 
