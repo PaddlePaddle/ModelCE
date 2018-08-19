@@ -141,13 +141,48 @@ class KpiRecord:
         self.activeds = activeds[i] if activeds else True
 
         unit_reprs = safe_get_fields('kpi-unit-reprs')
-        self.unit =  "(%s)" % unit_reprs[i] if unit_reprs else ""   
+        descs = safe_get_fields('kpi-descs')
 
-        descs = safe_get_fields('kpi-descs')        
+        self.unit =  "(%s)" % unit_reprs[i] if unit_reprs else ""
         self.desc = descs[i] if descs else ""
+
+        self.set_infos()
 
         return (self.values, self.type, self.avg, self.info, self.activeds,
                 self.unit, self.desc)
+
+    def set_infos(self):
+        #key = ['acc', 'cost', 'loss', 'speed', 'memory', 'duration', 'ppl']
+        types = ['train', 'test']
+        for t in types:
+            if '_acc' in self.name and t in self.name:
+                if not self.desc:
+                    self.desc = '%s accuracy, 0 to 1' % t
+                if self.unit == "(None)":
+                    self.unit = '(100%)'
+            elif 'cost' in self.name and t in self.name:
+                if not self.desc:
+                    self.desc = '%s loss function value' % t
+                if self.unit == "(None)":
+                    self.unit = '(100%)'
+            elif 'speed' in self.name and t in self.name:
+                if not self.desc:
+                    self.desc = '%s speed ' % t
+                if self.unit == "(None)":
+                    self.unit = '(images/s)'
+            elif 'gpu_memory' in self.name:
+                if not self.desc:
+                    self.desc = 'gpu memory usage'
+                if self.unit == "(None)":
+                    self.unit = '(MiB)'
+            elif 'duration' in self.name:
+                if not self.desc:
+                    self.desc = 'time takes for exec'
+                if self.unit == "(None)":
+                    self.unit = '(s)'
+            elif 'ppl' in self.name and t in self.name:
+                if not self.desc:
+                    self.desc = 'the ppl of %s ' % t
 
 
 class objdict(dict):
