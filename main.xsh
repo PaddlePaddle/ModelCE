@@ -211,13 +211,17 @@ def display_fail_info(exception_task):
     infos = pst.db.finds(config.table_name, {'commitid': paddle_commit, 'type': 'kpi' })
     log.error('Evaluate [%s] failed!' % paddle_commit)
     log.warn('The details:')
+    detail_info = ''
     for info in infos:
         if not info['passed']:
             log.warn('task:', info['task'])
+            detail_info += info['task'] + ' '
             log.warn('passed: ', info['passed'])
             log.warn('infos', '\n'.join(info['infos']))
             log.warn('kpis keys', info['kpis-keys'])
             log.warn('kpis values', info['kpis-values'])
+    with open("fail_models", 'w') as f:
+        f.write(detail_info)
     if exception_task:
         for task, info in exception_task.items():
             log.error("%s %s" %(task, info))
