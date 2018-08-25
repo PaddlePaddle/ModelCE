@@ -220,11 +220,12 @@ def display_fail_info(exception_task):
             log.warn('infos', '\n'.join(info['infos']))
             log.warn('kpis keys', info['kpis-keys'])
             log.warn('kpis values', info['kpis-values'])
-    with open("fail_models", 'w') as f:
-        f.write(detail_info)
     if exception_task:
         for task, info in exception_task.items():
+            detail_info += task + ' '
             log.error("%s %s" %(task, info))
+    with open("fail_models", 'w') as f:
+        f.write(detail_info)
 
 
 def display_success_info():
