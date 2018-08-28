@@ -16,10 +16,13 @@ import time
 $ceroot=config.workspace
 os.environ['ceroot'] = config.workspace
 mode = os.environ.get('mode', 'evaluation')
+# specific a task to run for test.
 specific_tasks = os.environ.get('specific_tasks', None)
 specific_tasks = specific_tasks.split(',') if specific_tasks else []
 case_type = os.environ.get('case_type', None)
-
+# run different tasks on different machine
+run_tasks = os.environ.get('run_tasks', None)
+run_tasks = run_tasks.split(',') if run_tasks else []
 
 def parse_args():
     parser= argparse.ArgumentParser("Tool for running CE models")
@@ -54,7 +57,11 @@ def update_baseline():
     commit = repo.get_commit(config.paddle_path)
     with PathRecover():
         message = "evalute [%s]" % commit
-        for task_name in get_tasks():
+        if run_tasks:
+            tasks = run_tasks
+        else:
+            tasks = get_tasks()
+        for task_name in tasks:
             task_dir = pjoin(config.baseline_path, task_name)
             cd @(task_dir)
             print('task_dir', task_dir)
@@ -118,6 +125,9 @@ def evaluate_tasks(args):
     if specific_tasks:
         tasks = specific_tasks
         log.warn('run specific tasks', tasks)
+    elif run_tasks:
+        tasks = run_tasks
+        log.warn('run tasks on the machine: ', tasks)
     elif args.modified:
         tasks = [v for v in get_changed_tasks()]
         log.warn('run changed tasks', tasks)
@@ -213,7 +223,7 @@ def display_fail_info(exception_task):
     log.warn('The details:')
     detail_info = ''
     for info in infos:
-        if not info['passed']:
+        if not info['passed'] and (not run_tasks or (info['task'] in run_tasks)):
             log.warn('task:', info['task'])
             detail_info += info['task'] + ' '
             log.warn('passed: ', info['passed'])
@@ -230,7 +240,10 @@ def display_fail_info(exception_task):
 
 def display_success_info():
     paddle_commit = repo.get_commit(config.paddle_path)
-    log.warn('Evaluate [%s] successed!' % paddle_commit)
+    if run_tasks:
+        log.warn('Evaluate [%s] successed for tasks: %s!' % (paddle_commit, run_tasks))
+    else:
+        log.warn('Evaluate [%s] successed!' % paddle_commit)
 
 
 def try_start_mongod():
