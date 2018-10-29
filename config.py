@@ -31,5 +31,5 @@ db_name = "ce"
 
 
 db_host = os.environ.get('db_host', '127.0.0.1')
-db_port = 27017
-table_name = "logs"
+db_port = os.environ.get('db_port', 27017)
+table_name = os.environ.get('table_name', 'logs')
