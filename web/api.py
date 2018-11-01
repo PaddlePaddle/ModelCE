@@ -13,7 +13,7 @@ from db import MongoDB
 from datetime import datetime, timedelta
 from kpi import Kpi
 
-db = MongoDB(config.db_name)
+db = MongoDB(config.db_name, config.db_host, config.db_port)
 
 
 class objdict(dict):
