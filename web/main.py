@@ -22,7 +22,7 @@ app = Flask(
 cache = Cache(
     app, config={'CACHE_TYPE': 'filesystem',
                  'CACHE_DIR': './_cache'})
-db = MongoDB(config.db_name)
+db = MongoDB(config.db_name, config.db_host, config.db_port)
 
 
 @app.route('/')
