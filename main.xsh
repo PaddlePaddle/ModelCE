@@ -128,19 +128,18 @@ def evaluate_tasks(args):
     for task in tasks:
         try:
             passed, eval_infos, kpis, kpi_values, kpi_types = evaluate(task)
-            if mode != "baseline_test":
-                log.warn('add evaluation %s result to mongodb' % task)
-                kpi_objs = get_kpi_tasks(task)
-                if (not args.modified) and (not specific_tasks):
-                    pst.add_evaluation_record(commitid = paddle_commit,
-                                              date = commit_time,
-                                              task = task,
-                                              passed = passed,
-                                              infos = eval_infos,
-                                              kpis = kpis,
-                                              kpi_values = kpi_values,
-                                              kpi_types = kpi_types,
-                                              kpi_objs = kpi_objs)
+            log.warn('add evaluation %s result to mongodb' % task)
+            kpi_objs = get_kpi_tasks(task)
+            if (not args.modified) and (not specific_tasks):
+                pst.add_evaluation_record(commitid = paddle_commit,
+                                          date = commit_time,
+                                          task = task,
+                                          passed = passed,
+                                          infos = eval_infos,
+                                          kpis = kpis,
+                                          kpi_values = kpi_values,
+                                          kpi_types = kpi_types,
+                                          kpi_objs = kpi_objs)
             if not passed:
                 all_passed = False
         except Exception as e:
