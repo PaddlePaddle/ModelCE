@@ -38,7 +38,7 @@ def main():
     suc, exception_task = evaluate_tasks(args)
     if suc:
         display_success_info()
-        if mode != "baseline_test" and (not args.modified) and (not specific_tasks):
+        if mode == "evaluation" and (not args.modified) and (not specific_tasks):
             update_baseline()
         exit 0
     else:
