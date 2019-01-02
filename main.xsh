@@ -33,8 +33,6 @@ def parse_args():
 def main():
     #try_start_mongod()
     args = parse_args()
-    if (not args.modified) and (not specific_tasks) and (not case_type):
-        refresh_baseline_workspace()
     suc, exception_task = evaluate_tasks(args)
     if suc:
         display_success_info()
