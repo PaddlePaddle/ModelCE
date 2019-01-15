@@ -45,7 +45,7 @@ def main():
     else:
         if (not args.modified) and (not specific_tasks):
             display_fail_info(exception_task)
-        exit -1
+        sys.exit(-1)
 
 
 def update_baseline():
