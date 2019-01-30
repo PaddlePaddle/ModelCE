@@ -271,6 +271,7 @@ def get_tasks():
     with PathRecover():
         os.chdir(_config.workspace)
         subdirs = os.listdir(_config.baseline_path)
+        subdirs = filter(lambda x : os.path.isdir(x), subdirs)
             
         log.info("subdirs", subdirs)
         if case_type:
